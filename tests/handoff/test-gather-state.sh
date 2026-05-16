@@ -2,6 +2,7 @@
 # tests/handoff/test-gather-state.sh
 set -e
 
+WORKSPACE_ROOT=$(pwd)
 # Use a temporary directory
 TEST_DIR=$(mktemp -d)
 trap 'rm -rf "$TEST_DIR"' EXIT
@@ -24,12 +25,25 @@ git commit -m "initial commit" -q --no-verify
 echo "modified" >> mock.txt
 
 # Run gather script
-cd /Users/lihu/MyFiles/Workspace/research/superpowers
-bash skills/handoff/scripts/gather-state.sh "$TEST_DIR" > "$TEST_DIR/output.txt"
+SCRIPT_PATH="$WORKSPACE_ROOT/skills/handoff/scripts/gather-state.sh"
+cd "$TEST_DIR"
+"$SCRIPT_PATH" "$TEST_DIR" > "$TEST_DIR/output.txt"
 
-# Verify output contains git info
-if ! grep -qi "modified files" "$TEST_DIR/output.txt"; then
-    echo "FAIL: Missing git info"
+# Verify output
+if ! grep -q "feature-branch" "$TEST_DIR/output.txt"; then
+    echo "FAIL: Missing branch info"
+    cat "$TEST_DIR/output.txt"
+    exit 1
+fi
+
+if ! grep -q "mock.txt" "$TEST_DIR/output.txt"; then
+    echo "FAIL: Missing modified file info"
+    cat "$TEST_DIR/output.txt"
+    exit 1
+fi
+
+if ! grep -q "initial commit" "$TEST_DIR/output.txt"; then
+    echo "FAIL: Missing recent commit info"
     cat "$TEST_DIR/output.txt"
     exit 1
 fi
