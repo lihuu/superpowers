@@ -1,16 +1,26 @@
 ---
 name: handoff
-description: Use when you need to hand off the current task to another agent or session.
+description: Use when you need to hand off the current task, especially when hitting token limits, context saturation, or preparing for session expiration.
 ---
 
 # Handoff
 
-Capture your current progress, reasoning, and pending tasks into a human-readable Markdown file.
+## Overview
+
+Capture your current progress, reasoning, and pending tasks into a human-readable Markdown file to ensure a seamless transition between sessions or agents.
 
 ## When to Use
 - You are hitting context limits and need a fresh session.
 - You need to pass the work to a human or another specialized agent.
 - You are stopping for the day and want to ensure a clean resumption.
+
+## Quick Reference
+
+| Item | Path / Command |
+| :--- | :--- |
+| **Gather Script** | `bash skills/handoff/scripts/gather-state.sh .` |
+| **Handoff Directory** | `docs/superpowers/handoffs/` |
+| **Filename Format** | `YYYY-MM-DD-<feature>-handoff.md` |
 
 ## The Process
 
@@ -25,6 +35,13 @@ Capture your current progress, reasoning, and pending tasks into a human-readabl
    - Save to: `docs/superpowers/handoffs/YYYY-MM-DD-<feature>-handoff.md`
 4. **Resumption Instruction:** End your session by telling the user:
    > "I have performed a handoff. Please tell the next agent: 'Read the latest handoff in docs/superpowers/handoffs/ and resume work.'"
+
+## Common Mistakes
+
+- **Omitting "Mental State":** Forgetting to document the "why" behind decisions, leaving the next agent to guess your reasoning.
+- **Forgetting Modified Files:** Not explicitly listing files you've changed but haven't committed.
+- **Outdated Task Status:** Failing to update the task status or TODO list before generating the handoff.
+- **Vague Next Steps:** Leaving the "Next Immediate Action" unclear, causing the next agent to waste time re-orienting.
 
 ## For the Receiving Agent
 
