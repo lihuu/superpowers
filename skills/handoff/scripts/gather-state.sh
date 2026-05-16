@@ -17,8 +17,10 @@ if ! git -C "$PROJECT_ROOT" rev-parse --is-inside-work-tree &> /dev/null; then
 fi
 
 echo "### Git State"
-echo "- **Branch:** $(git -C "$PROJECT_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")"
-echo "- **Last Commit:** $(git -C "$PROJECT_ROOT" rev-parse --short HEAD 2>/dev/null || echo "none")"
+BRANCH=$(git -C "$PROJECT_ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null || git -C "$PROJECT_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+LAST_COMMIT=$(git -C "$PROJECT_ROOT" rev-parse --verify --short HEAD 2>/dev/null || echo "none")
+echo "- **Branch:** $BRANCH"
+echo "- **Last Commit:** $LAST_COMMIT"
 
 echo ""
 echo "### Modified Files"
@@ -26,4 +28,8 @@ git -C "$PROJECT_ROOT" status --short | sed 's/^/- /'
 
 echo ""
 echo "### Recent Commits (Last 3)"
-git -C "$PROJECT_ROOT" log -n 3 --oneline | sed 's/^/- /'
+if git -C "$PROJECT_ROOT" rev-parse --verify HEAD >/dev/null 2>&1; then
+    git -C "$PROJECT_ROOT" log -n 3 --oneline | sed 's/^/- /'
+else
+    echo "- none"
+fi

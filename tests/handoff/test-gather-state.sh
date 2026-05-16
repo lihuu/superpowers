@@ -48,4 +48,28 @@ if ! grep -q "initial commit" "$TEST_DIR/output.txt"; then
     exit 1
 fi
 
+EMPTY_REPO_DIR=$(mktemp -d)
+git -C "$EMPTY_REPO_DIR" init -q
+git -C "$EMPTY_REPO_DIR" checkout -b empty-branch -q
+
+"$SCRIPT_PATH" "$EMPTY_REPO_DIR" > "$EMPTY_REPO_DIR/output.txt" 2> "$EMPTY_REPO_DIR/error.txt"
+
+if grep -q "fatal:" "$EMPTY_REPO_DIR/error.txt"; then
+    echo "FAIL: Empty repository emitted fatal error"
+    cat "$EMPTY_REPO_DIR/error.txt"
+    exit 1
+fi
+
+if ! grep -Fq -- "- **Branch:** empty-branch" "$EMPTY_REPO_DIR/output.txt"; then
+    echo "FAIL: Missing empty repository branch info"
+    cat "$EMPTY_REPO_DIR/output.txt"
+    exit 1
+fi
+
+if ! grep -Fq -- "- **Last Commit:** none" "$EMPTY_REPO_DIR/output.txt"; then
+    echo "FAIL: Missing empty repository last commit fallback"
+    cat "$EMPTY_REPO_DIR/output.txt"
+    exit 1
+fi
+
 echo "PASS"

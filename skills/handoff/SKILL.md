@@ -30,11 +30,46 @@ Capture your current progress, reasoning, and pending tasks into a human-readabl
    - **Work Completed:** List specific steps finished.
    - **Pending Tasks:** List exactly what remains in the plan/TODO.
    - **Mental State:** Document your current reasoning, blockers, and "gotchas".
+   - Use the Handoff Template below. Do not omit sections; write `none` when a section has no content.
 3. **Save the Handoff:**
    - Create the directory if it doesn't exist: `docs/superpowers/handoffs/`
    - Save to: `docs/superpowers/handoffs/YYYY-MM-DD-<feature>-handoff.md`
 4. **Resumption Instruction:** End your session by telling the user:
-   > "I have performed a handoff. Please tell the next agent: 'Read the latest handoff in docs/superpowers/handoffs/ and resume work.'"
+   > "I have performed a handoff. Please tell the next agent: 'Use the takeover skill to read docs/superpowers/handoffs/<exact-handoff-file>.md and resume work.'"
+
+## Handoff Template
+
+```markdown
+# Task Handoff: [Feature/Task Name]
+
+- **Date:** YYYY-MM-DD
+- **Source Agent:** [Agent/model name or unknown]
+- **Current Branch:** `[branch from gather-state]`
+- **Last Commit:** `[short SHA or none]`
+- **Handoff File:** `docs/superpowers/handoffs/YYYY-MM-DD-<feature>-handoff.md`
+
+## Current Objective
+[One sentence describing the user-visible goal.]
+
+## Work Completed
+- [x] [Specific completed step]
+
+## Pending Tasks
+1. **Next Immediate Action:** [Exact next command, file edit, or decision the receiving agent should take.]
+2. **Remaining Steps:**
+   - [ ] [Specific remaining step]
+
+## Modified Files
+- `[path]`: [What changed and whether it is staged, unstaged, or untracked.]
+
+## Git State
+[Paste the output from `bash skills/handoff/scripts/gather-state.sh .`.]
+
+## Mental State & Blockers
+- **Reasoning:** [Why this approach was chosen.]
+- **Blockers:** [Current issues, or `none`.]
+- **Gotchas:** [Risks, assumptions, or `none`.]
+```
 
 ## Common Mistakes
 

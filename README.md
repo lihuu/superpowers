@@ -169,6 +169,8 @@ already use it in another harness.
 
 8. **handoff** - Activates when pausing or switching focus. Gathers current state, pending tasks, and context into a structured summary for the next session.
 
+9. **takeover** - Activates when resuming from a handoff or inheriting partially completed work. Validates workspace state before continuing.
+
 **The agent checks for relevant skills before any task.** Mandatory workflows, not suggestions.
 
 ## What's Inside
@@ -192,6 +194,7 @@ already use it in another harness.
 - **using-git-worktrees** - Parallel development branches
 - **finishing-a-development-branch** - Merge/PR decision workflow
 - **handoff** - Session state preservation
+- **takeover** - Receiving-side handoff resumption
 - **subagent-driven-development** - Fast iteration with two-stage review (spec compliance, then code quality)
 
 **Meta**
