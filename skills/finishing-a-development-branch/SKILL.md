@@ -109,10 +109,7 @@ git merge <feature-branch>
 # Verify tests on merged result
 <test command>
 
-# Only after merge succeeds: cleanup worktree (Step 6), then delete branch
-```
-
-Then: Cleanup worktree (Step 6), then delete branch:
+# Only after merge succeeds: archive docs (Step 7), cleanup workspace (Step 6), then delete branch
 
 ```bash
 git branch -d <feature-branch>
@@ -135,7 +132,8 @@ EOF
 )"
 ```
 
-**Do NOT clean up worktree** — user needs it alive to iterate on PR feedback.
+**Then: Archive docs (Step 7)** (Worktree is preserved for PR iteration).
+
 
 #### Option 3: Keep As-Is
 
@@ -163,7 +161,7 @@ MAIN_ROOT=$(git -C "$(git rev-parse --git-common-dir)/.." rev-parse --show-tople
 cd "$MAIN_ROOT"
 ```
 
-Then: Cleanup worktree (Step 6), then force-delete branch:
+Then: Archive docs (Step 7), cleanup workspace (Step 6), then force-delete branch:
 ```bash
 git branch -D <feature-branch>
 ```
@@ -190,6 +188,16 @@ git worktree prune  # Self-healing: clean up any stale registrations
 ```
 
 **Otherwise:** The host environment (harness) owns this workspace. Do NOT remove it. If your platform provides a workspace-exit tool, use it. Otherwise, leave the workspace in place.
+
+### Step 7: Archive Documentation (Automatic)
+
+After successful merge, PR creation, or discard:
+
+1. **Identify Feature Name**: From branch name (e.g., `feat/my-feature` -> `my-feature`)
+2. **Run Archival Script**:
+```bash
+bash skills/finishing-a-development-branch/archive-docs.sh . "<feature-name>" "<completed|discarded>"
+```
 
 ## Quick Reference
 
