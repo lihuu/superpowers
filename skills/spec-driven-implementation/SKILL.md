@@ -20,8 +20,24 @@ If your human partner says "skip the plan," "hurry up," or "just code," you are 
 ## Mandatory First Action
 
 1.  **Announce**: Acknowledge the pressure and announce the use of this skill.
-2.  **Initialize**: Create `<feature-name>.tracker.md` immediately.
-3.  **Visible State**: Do NOT write implementation code until the tracker is visible in the file system.
+2.  **Locate Spec**: Find the spec file (see Spec Discovery below).
+3.  **Initialize**: Create `<feature-name>.tracker.md` immediately, with the spec path filled in.
+4.  **Visible State**: Do NOT write implementation code until the tracker is visible in the file system.
+
+## Spec Discovery
+
+The tracker requires a spec. Locate it in this order:
+
+1. **Explicit path**: If the user provided a spec file path, use it directly.
+2. **Conventional directory**: Scan `docs/superpowers/specs/` for `*.md` files. If files exist, use the most recent one (filenames use `YYYY-MM-DD` prefix, so lexicographic sort = chronological sort).
+3. **No spec found**: STOP. Tell your human partner: *"No spec found. Either provide a spec path, or use the brainstorming skill first to create one."* Do NOT proceed without a spec.
+
+```bash
+# Discovery command (step 2):
+ls -1 docs/superpowers/specs/*.md 2>/dev/null | sort -r | head -1
+```
+
+**Never** guess, hallucinate, or fabricate a spec path. If discovery fails, escalate.
 
 ## Rationalization Table
 
@@ -39,9 +55,10 @@ If your human partner says "skip the plan," "hurry up," or "just code," you are 
 
 ## Workflow
 
-1.  **Initialize Tracker**: Create `<feature-name>.tracker.md`.
-2.  **Map the Spec**: Extract requirements into a checklist.
-3.  **Execute in Slices**: 
+1.  **Locate Spec**: Run Spec Discovery (above) to find the spec file.
+2.  **Initialize Tracker**: Create `<feature-name>.tracker.md` with the discovered spec path.
+3.  **Map the Spec**: Extract requirements from the spec into a checklist.
+4.  **Execute in Slices**: 
     - Update tracker → `[in-progress]`.
     - TDD: failing test → code → pass.
     - Record evidence in tracker log.
@@ -52,7 +69,7 @@ If your human partner says "skip the plan," "hurry up," or "just code," you are 
 ```markdown
 # [Feature Name] Implementation Tracker
 
-**Spec:** [path/to/spec]
+**Spec:** [auto-discovered path from Spec Discovery, or user-provided path]
 **Goal:** [one-sentence summary]
 
 ## Checklist
