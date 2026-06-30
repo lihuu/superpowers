@@ -113,6 +113,15 @@ check_contains "skills/subagent-driven-development/SKILL.md" "Checkbox steps are
 check_contains "skills/subagent-driven-development/implementer-prompt.md" "complete all of them before reporting DONE" \
     "implementer completes all checkbox steps inside a task"
 
+check_contains "skills/fast-subagent-development/SKILL.md" "spec-sections implementation" \
+    "fast subagent implementation uses implementation extraction"
+check_contains "skills/fast-subagent-development/SKILL.md" "spec-sections acceptance" \
+    "fast subagent review uses acceptance only at final review"
+check_contains "skills/fast-subagent-development/SKILL.md" "Initial implementer subagents must not receive Acceptance content" \
+    "fast subagent implementers exclude acceptance"
+check_contains "skills/fast-subagent-development/final-reviewer-prompt.md" "Acceptance region if present" \
+    "fast subagent final reviewer accepts optional acceptance"
+
 check_contains "skills/requesting-code-review/SKILL.md" "spec-sections acceptance" \
     "independent review extracts acceptance region"
 check_order "skills/requesting-code-review/code-reviewer.md" "## Implementation Spec" "## Acceptance Contract" \

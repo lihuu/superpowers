@@ -60,6 +60,7 @@ while [[ $# -gt 0 ]]; do
             echo "  test-acceptance-criteria-requirement.sh  Verify specs require acceptance criteria"
             echo "  test-spec-sections.sh                  Verify strict spec region parsing"
             echo "  test-staged-spec-workflow.sh           Verify stage-specific skill inputs"
+            echo "  test-fast-subagent-development.sh       Verify fast subagent workflow contracts"
             echo "  test-subagent-driven-development.sh  Test skill loading and requirements"
             echo ""
             echo "Integration Tests (use --integration):"
@@ -79,6 +80,7 @@ tests=(
     "test-acceptance-criteria-requirement.sh"
     "test-spec-sections.sh"
     "test-staged-spec-workflow.sh"
+    "test-fast-subagent-development.sh"
     "test-subagent-driven-development.sh"
 )
 
