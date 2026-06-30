@@ -57,12 +57,30 @@ ls -1 docs/superpowers/specs/*.md 2>/dev/null | sort -r | head -1
 
 1.  **Locate Spec**: Run Spec Discovery (above) to find the spec file.
 2.  **Initialize Tracker**: Create `<feature-name>.tracker.md` with the discovered spec path.
-3.  **Map the Spec**: Extract requirements from the spec into a checklist.
-4.  **Execute in Slices**: 
+3.  **Extract Implementation Context**: Resolve `spec-sections` relative to the brainstorming skill directory and run:
+
+```bash
+SPEC_SECTIONS="<brainstorming-skill-directory>/spec-sections"
+LEGACY_POLICY="${SUPERPOWERS_SPEC_LEGACY_POLICY:-reject}"
+# Equivalent CLI: spec-sections implementation <spec>
+"$SPEC_SECTIONS" --legacy "$LEGACY_POLICY" implementation "$SPEC_PATH" > /tmp/implementation-spec.md
+```
+
+4.  **Map the Spec**: Read `/tmp/implementation-spec.md` and extract its requirements into a checklist. Do not read the original spec file or include Acceptance content in the tracker.
+5.  **Record Diff Base**: Before implementation, run `BASE_SHA=$(git rev-parse HEAD)` and record it in the tracker.
+6.  **Execute in Slices**:
     - Update tracker → `[in-progress]`.
     - TDD: failing test → code → pass.
     - Record evidence in tracker log.
     - Mark `[x] complete`.
+7.  **Independent Acceptance**:
+    - After implementation, run `spec-sections implementation "$SPEC_PATH"` and `spec-sections acceptance "$SPEC_PATH"` into separate review files.
+    - Give a fresh reviewer complete Implementation Spec, complete Acceptance, related diff, then test results in that order.
+    - Require PASS, FAIL, or NOT VERIFIED with evidence for every criterion and Rollout Acceptance check.
+    - Repair through a fresh minimal context containing only failed criteria, failure evidence, referenced Implementation Spec sections, and related diff.
+    - Re-verify failures while keeping passed criteria closed unless affected.
+    - Freshly extract both complete regions and rerun every Acceptance Criterion and Rollout Acceptance check before final sign-off.
+    - If no fresh agent/session is available for review or repair, stop and hand off the corresponding packet rather than collapsing the stages into one context.
 
 ## Tracker Format
 

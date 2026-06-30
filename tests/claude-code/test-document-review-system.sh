@@ -30,6 +30,8 @@ mkdir -p docs/superpowers/specs
 
 # Create a spec document WITH INTENTIONAL ERRORS for the reviewer to catch
 cat > docs/superpowers/specs/test-feature-design.md <<'EOF'
+<!-- IMPLEMENTATION-SPEC-BEGIN -->
+
 # Test Feature Design
 
 ## Overview
@@ -56,6 +58,16 @@ Data flows from the frontend to the backend.
 ## Testing Strategy
 
 Tests will be written to cover the main functionality.
+
+<!-- IMPLEMENTATION-SPEC-END -->
+
+<!-- ACCEPTANCE-BEGIN -->
+
+## Acceptance Criteria
+
+AC-01: The feature works correctly and reports all required results.
+
+<!-- ACCEPTANCE-END -->
 EOF
 
 # Initialize git repo
@@ -69,22 +81,28 @@ echo ""
 echo "Created test spec with intentional errors:"
 echo "  - TODO placeholder in Requirements section"
 echo "  - 'specified later' deferral in Architecture section"
+echo "  - Superficial Acceptance Criterion with no verification contract"
 echo ""
 echo "Running spec document reviewer..."
 echo ""
 
 # Run Claude to review the spec
 OUTPUT_FILE="$TEST_PROJECT/claude-output.txt"
+EXTRACTED_SPEC=$("$SCRIPT_DIR/../../skills/brainstorming/spec-sections" full \
+    "$TEST_PROJECT/docs/superpowers/specs/test-feature-design.md")
 
 PROMPT="You are testing the spec document reviewer.
 
 Read the spec-document-reviewer-prompt.md template in skills/brainstorming/ to understand the review format.
 
-Then review the spec at $TEST_PROJECT/docs/superpowers/specs/test-feature-design.md using the criteria from that template.
+Review the following validated content produced by spec-sections full:
+
+$EXTRACTED_SPEC
 
 Look for:
 - TODOs, placeholders, 'TBD', incomplete sections
 - Sections saying 'to be defined later' or 'will spec when X is done'
+- Missing, vague, or superficially verifiable Acceptance Criteria
 - Sections noticeably less detailed than others
 
 Output your review in the format specified in the template."
@@ -128,8 +146,18 @@ else
 fi
 echo ""
 
-# Test 3: Reviewer output includes Issues section
-echo "Test 3: Review output format..."
+# Test 3: Reviewer found superficial Acceptance Criteria
+echo "Test 3: Reviewer found superficial Acceptance Criteria..."
+if grep -qi "acceptance" "$OUTPUT_FILE" && grep -qi "vague\|verification\|evidence\|pass condition\|fail condition\|atomic\|structure" "$OUTPUT_FILE"; then
+    echo "  [PASS] Reviewer identified superficial Acceptance Criteria"
+else
+    echo "  [FAIL] Reviewer did not identify superficial Acceptance Criteria"
+    FAILED=$((FAILED + 1))
+fi
+echo ""
+
+# Test 4: Reviewer output includes Issues section
+echo "Test 4: Review output format..."
 if grep -qi "issues\|Issues" "$OUTPUT_FILE"; then
     echo "  [PASS] Review includes Issues section"
 else
@@ -138,8 +166,8 @@ else
 fi
 echo ""
 
-# Test 4: Reviewer did NOT approve (found issues)
-echo "Test 4: Reviewer verdict..."
+# Test 5: Reviewer did NOT approve (found issues)
+echo "Test 5: Reviewer verdict..."
 if grep -qi "Issues Found\|❌\|not approved\|issues found" "$OUTPUT_FILE"; then
     echo "  [PASS] Reviewer correctly found issues (not approved)"
 elif grep -qi "Approved\|✅" "$OUTPUT_FILE" && ! grep -qi "Issues Found\|❌" "$OUTPUT_FILE"; then
@@ -163,6 +191,7 @@ if [ $FAILED -eq 0 ]; then
     echo "The spec document reviewer correctly:"
     echo "  ✓ Found TODO placeholder"
     echo "  ✓ Found 'specified later' deferral"
+    echo "  ✓ Found superficial Acceptance Criteria"
     echo "  ✓ Produced properly formatted review"
     echo "  ✓ Did not approve spec with errors"
     exit 0

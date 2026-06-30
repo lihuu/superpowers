@@ -1,0 +1,157 @@
+#!/usr/bin/env python3
+"""Validate and extract staged sections from a single-file Superpowers spec."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+
+
+IMPLEMENTATION_BEGIN = "<!-- IMPLEMENTATION-SPEC-BEGIN -->"
+IMPLEMENTATION_END = "<!-- IMPLEMENTATION-SPEC-END -->"
+ACCEPTANCE_BEGIN = "<!-- ACCEPTANCE-BEGIN -->"
+ACCEPTANCE_END = "<!-- ACCEPTANCE-END -->"
+MARKERS = (
+    IMPLEMENTATION_BEGIN,
+    IMPLEMENTATION_END,
+    ACCEPTANCE_BEGIN,
+    ACCEPTANCE_END,
+)
+
+
+class SpecSectionsError(Exception):
+    """Raised when a spec cannot be safely separated."""
+
+
+@dataclass(frozen=True)
+class ParsedSpec:
+    implementation: str
+    acceptance: str
+    legacy: bool = False
+
+
+def read_spec(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise SpecSectionsError(f"spec not found: {path}") from exc
+    except OSError as exc:
+        raise SpecSectionsError(f"cannot read spec {path}: {exc}") from exc
+    except UnicodeDecodeError as exc:
+        raise SpecSectionsError(f"spec is not valid UTF-8: {path}") from exc
+
+
+def parse_spec(text: str, legacy_policy: str) -> ParsedSpec:
+    lines = text.splitlines()
+    positions = {
+        marker: [index for index, line in enumerate(lines) if line == marker]
+        for marker in MARKERS
+    }
+    marker_count = sum(len(indexes) for indexes in positions.values())
+
+    if marker_count == 0:
+        if legacy_policy == "full":
+            if not text.strip():
+                raise SpecSectionsError("legacy spec is empty")
+            return ParsedSpec(text.rstrip("\r\n"), text.rstrip("\r\n"), legacy=True)
+        raise SpecSectionsError(
+            "legacy spec has no section markers; migrate it or pass --legacy full"
+        )
+
+    for marker, indexes in positions.items():
+        if len(indexes) != 1:
+            raise SpecSectionsError(
+                f"expected marker exactly once, found {len(indexes)}: {marker}"
+            )
+
+    implementation_begin = positions[IMPLEMENTATION_BEGIN][0]
+    implementation_end = positions[IMPLEMENTATION_END][0]
+    acceptance_begin = positions[ACCEPTANCE_BEGIN][0]
+    acceptance_end = positions[ACCEPTANCE_END][0]
+
+    if not (
+        implementation_begin
+        < implementation_end
+        < acceptance_begin
+        < acceptance_end
+    ):
+        raise SpecSectionsError(
+            "markers must be ordered as implementation BEGIN/END followed by "
+            "acceptance BEGIN/END; nesting is not allowed"
+        )
+
+    implementation_lines = lines[implementation_begin + 1 : implementation_end]
+    acceptance_lines = lines[acceptance_begin + 1 : acceptance_end]
+    implementation = "\n".join(implementation_lines).strip("\n")
+    acceptance = "\n".join(acceptance_lines).strip("\n")
+
+    if not implementation.strip():
+        raise SpecSectionsError("implementation section is empty")
+    if not acceptance.strip():
+        raise SpecSectionsError("acceptance section is empty")
+
+    return ParsedSpec(implementation, acceptance)
+
+
+def emit(content: str) -> None:
+    sys.stdout.write(content)
+    if not content.endswith("\n"):
+        sys.stdout.write("\n")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="spec-sections",
+        description="Validate and extract staged regions from a Superpowers spec.",
+    )
+    parser.add_argument(
+        "--legacy",
+        choices=("reject", "full"),
+        default="reject",
+        help="How to handle specs with no markers (default: reject).",
+    )
+    parser.add_argument(
+        "command",
+        choices=("validate", "implementation", "acceptance", "full"),
+    )
+    parser.add_argument("spec", type=Path)
+    return parser
+
+
+def main() -> int:
+    args = build_parser().parse_args()
+
+    try:
+        parsed = parse_spec(read_spec(args.spec), args.legacy)
+    except SpecSectionsError as exc:
+        print(f"spec-sections: error: {exc}", file=sys.stderr)
+        return 1
+
+    if parsed.legacy:
+        print(
+            "spec-sections: legacy full mode; staged isolation disabled",
+            file=sys.stderr,
+        )
+        if args.command != "validate":
+            emit(parsed.implementation)
+        return 0
+    else:
+        print("spec-sections: staged isolation enabled", file=sys.stderr)
+
+    if args.command == "validate":
+        return 0
+    if args.command == "implementation":
+        emit(parsed.implementation)
+        return 0
+    if args.command == "acceptance":
+        emit(parsed.acceptance)
+        return 0
+
+    emit(f"{parsed.implementation}\n\n{parsed.acceptance}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

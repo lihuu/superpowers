@@ -11,7 +11,10 @@ Task tool (general-purpose):
   Use template at requesting-code-review/code-reviewer.md
 
   DESCRIPTION: [task summary, from implementer's report]
-  PLAN_OR_REQUIREMENTS: Task N from [plan-file]
+  IMPLEMENTATION_SPEC: [relevant extracted Implementation Spec sections plus Task N]
+  ACCEPTANCE_CONTRACT: Not provided: per-task code quality review only
+  IMPLEMENTATION_DIFF: [actual task diff]
+  TEST_RESULTS: [fresh task test command and output]
   BASE_SHA: [commit before task]
   HEAD_SHA: [current commit]
 ```

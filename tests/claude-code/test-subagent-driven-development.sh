@@ -9,6 +9,27 @@ source "$SCRIPT_DIR/test-helpers.sh"
 echo "=== Test: subagent-driven-development skill ==="
 echo ""
 
+# Static contract: plan checkbox steps are not subagent dispatch boundaries.
+echo "Test 0: Dispatch unit contract..."
+
+if grep -Fq "Checkbox steps are TDD execution checkpoints, not subagent boundaries" \
+    "$SCRIPT_DIR/../../skills/subagent-driven-development/SKILL.md"; then
+    echo "  [PASS] Skill defines checkbox steps as execution checkpoints"
+else
+    echo "  [FAIL] Skill does not define checkbox-step dispatch boundary"
+    exit 1
+fi
+
+if grep -Fq "complete all of them before reporting DONE" \
+    "$SCRIPT_DIR/../../skills/subagent-driven-development/implementer-prompt.md"; then
+    echo "  [PASS] Implementer prompt requires completing all checkbox steps"
+else
+    echo "  [FAIL] Implementer prompt does not require completing all checkbox steps"
+    exit 1
+fi
+
+echo ""
+
 # Test 1: Verify skill can be loaded
 echo "Test 1: Skill loading..."
 

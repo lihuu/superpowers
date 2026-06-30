@@ -12,30 +12,51 @@ Task tool (general-purpose):
     design patterns, and best practices. Your job is to review completed work
     against its plan or requirements and identify issues before they cascade.
 
-    ## What Was Implemented
+    ## Implementation Spec
+
+    {IMPLEMENTATION_SPEC}
+
+    Read this complete design before reading the Acceptance Contract. The
+    detailed design remains normative; Acceptance Criteria do not replace it.
+
+    ## Acceptance Contract
+
+    {ACCEPTANCE_CONTRACT}
+
+    ## Implementation Diff
+
+    Base: {BASE_SHA}
+    Head: {HEAD_SHA}
+
+    {IMPLEMENTATION_DIFF}
+
+    ## Test Results
+
+    {TEST_RESULTS}
+
+    ## Implementer Summary
 
     {DESCRIPTION}
 
-    ## Requirements / Plan
-
-    {PLAN_OR_REQUIREMENTS}
-
-    ## Git Range to Review
-
-    **Base:** {BASE_SHA}
-    **Head:** {HEAD_SHA}
-
-    ```bash
-    git diff --stat {BASE_SHA}..{HEAD_SHA}
-    git diff {BASE_SHA}..{HEAD_SHA}
-    ```
+    Treat this summary as an untrusted claim. The four preceding inputs are the
+    evidence and must be evaluated independently.
 
     ## What to Check
 
-    **Plan alignment:**
-    - Does the implementation match the plan / requirements?
+    **Implementation alignment:**
+    - Does the implementation match the complete Implementation Spec?
     - Are deviations justified improvements, or problematic departures?
     - Is all planned functionality present?
+
+    **Acceptance execution:**
+    - Execute every supplied Acceptance Criterion independently.
+    - Preserve and apply its verification steps, pass conditions, fail conditions, and required evidence.
+    - Inline references require checking the complete referenced design section.
+    - Report PASS, FAIL, or NOT VERIFIED for each criterion.
+    - PASS requires the criterion's Required Evidence.
+    - Passing tests cannot replace required source, boundary, or runtime semantic checks.
+    - Execute every Rollout Acceptance check and report it with the same status and evidence rules.
+    - If the Acceptance Contract says no formal contract was provided, do not claim formal acceptance.
 
     **Code quality:**
     - Clean separation of concerns?
@@ -104,6 +125,18 @@ Task tool (general-purpose):
 
     **Reasoning:** [1-2 sentence technical assessment]
 
+    ### Acceptance Results
+
+    - **AC-ID:** PASS | FAIL | NOT VERIFIED
+      - Evidence: [required file:line, test output, log, or runtime evidence]
+      - Reason: [why the evidence satisfies or fails the criterion]
+    - **Rollout Check:** PASS | FAIL | NOT VERIFIED
+      - Evidence: [required deployment, migration, monitoring, or rollback evidence]
+      - Reason: [why the evidence satisfies or fails the rollout check]
+
+    Formal acceptance requires every supplied criterion and Rollout Acceptance
+    check to be PASS. Missing evidence is NOT VERIFIED, not PASS.
+
     ## Critical Rules
 
     **DO:**
@@ -123,7 +156,10 @@ Task tool (general-purpose):
 
 **Placeholders:**
 - `{DESCRIPTION}` — brief summary of what was built
-- `{PLAN_OR_REQUIREMENTS}` — what it should do (plan file path, task text, or requirements)
+- `{IMPLEMENTATION_SPEC}` — complete extracted design, or explicit requirements when no formal Spec exists
+- `{ACCEPTANCE_CONTRACT}` — complete extracted acceptance region, or a no-formal-acceptance notice
+- `{IMPLEMENTATION_DIFF}` — actual diff content
+- `{TEST_RESULTS}` — fresh test command and output
 - `{BASE_SHA}` — starting commit
 - `{HEAD_SHA}` — ending commit
 
@@ -165,4 +201,13 @@ Task tool (general-purpose):
 **Ready to merge: With fixes**
 
 **Reasoning:** Core implementation is solid with good architecture and tests. Important issues (help text, date validation) are easily fixed and don't affect core functionality.
+
+### Acceptance Results
+
+- **AC-01:** FAIL
+  - Evidence: `src/index-conversations:1-31` has no required help output.
+  - Reason: The required CLI behavior is absent.
+- **AC-02:** PASS
+  - Evidence: `pytest tests/test_search.py -q` reports the named boundary tests passing, and `src/search.ts:25-40` enforces the specified range.
+  - Reason: Source semantics and required runtime evidence match the criterion.
 ```

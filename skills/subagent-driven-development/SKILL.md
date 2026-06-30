@@ -41,6 +41,24 @@ digraph when_to_use {
 
 ## The Process
 
+### Stage Context Setup
+
+Read the plan header to obtain the single-file Spec path. Resolve `spec-sections` relative to the brainstorming skill directory, then extract only the Implementation Spec:
+
+```bash
+SPEC_SECTIONS="<brainstorming-skill-directory>/spec-sections"
+LEGACY_POLICY="${SUPERPOWERS_SPEC_LEGACY_POLICY:-reject}"
+# Equivalent CLI: spec-sections implementation <spec>
+"$SPEC_SECTIONS" --legacy "$LEGACY_POLICY" implementation "$SPEC_PATH" > /tmp/implementation-spec.md
+BASE_SHA=$(git rev-parse HEAD)
+```
+
+Read the plan and `/tmp/implementation-spec.md` once. Record `BASE_SHA` before dispatching implementation. Do not read the original spec. Initial implementer subagents receive their full task plus only the relevant extracted Implementation Spec sections. Acceptance content is not implementation context.
+
+**Dispatch unit:** A subagent task is one plan task section such as `### Task N: ...`, including all checkbox steps inside it. Checkbox steps are TDD execution checkpoints, not subagent boundaries. Do not dispatch separate subagents or separate review cycles for "write failing test", "run it", "implement", "run tests", "commit", docs, or wiring steps that belong to the same plan task.
+
+Per-task spec compliance reviews compare the task diff to the relevant Implementation Spec sections. They are not Acceptance execution and must not expose the Acceptance region to the implementer.
+
 ```dot
 digraph process {
     rankdir=TB;
@@ -62,7 +80,11 @@ digraph process {
 
     "Read plan, extract all tasks with full text, note context, create TodoWrite" [shape=box];
     "More tasks remain?" [shape=diamond];
-    "Dispatch final code reviewer subagent for entire implementation" [shape=box];
+    "Dispatch independent final acceptance reviewer" [shape=box];
+    "Acceptance failures?" [shape=diamond];
+    "Dispatch minimal repair packet" [shape=box];
+    "Re-verify failed criteria" [shape=box];
+    "Rerun all acceptance criteria" [shape=box];
     "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
     "Read plan, extract all tasks with full text, note context, create TodoWrite" -> "Dispatch implementer subagent (./implementer-prompt.md)";
@@ -81,10 +103,27 @@ digraph process {
     "Code quality reviewer subagent approves?" -> "Mark task complete in TodoWrite" [label="yes"];
     "Mark task complete in TodoWrite" -> "More tasks remain?";
     "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
-    "More tasks remain?" -> "Dispatch final code reviewer subagent for entire implementation" [label="no"];
-    "Dispatch final code reviewer subagent for entire implementation" -> "Use superpowers:finishing-a-development-branch";
+    "More tasks remain?" -> "Dispatch independent final acceptance reviewer" [label="no"];
+    "Dispatch independent final acceptance reviewer" -> "Acceptance failures?";
+    "Acceptance failures?" -> "Dispatch minimal repair packet" [label="yes"];
+    "Dispatch minimal repair packet" -> "Re-verify failed criteria";
+    "Re-verify failed criteria" -> "Acceptance failures?";
+    "Acceptance failures?" -> "Rerun all acceptance criteria" [label="no"];
+    "Rerun all acceptance criteria" -> "Use superpowers:finishing-a-development-branch";
 }
 ```
+
+### Independent Acceptance and Repair Loop
+
+After all implementation tasks and code-quality reviews:
+
+1. Run `spec-sections implementation "$SPEC_PATH"` and `spec-sections acceptance "$SPEC_PATH"` into separate temporary files. Both commands validate before output.
+2. Dispatch an independent acceptance reviewer using the requesting-code-review template. Provide context in this exact order: complete Implementation Spec, complete Acceptance contract, implementation diff, test results.
+3. Require PASS, FAIL, or NOT VERIFIED plus required evidence for every Acceptance Criterion and every Rollout Acceptance check.
+4. If criteria fail, build `repair-prompt.md` using only the failed criteria, their failure evidence, the Implementation Spec sections those criteria reference, and the related implementation diff.
+5. Previously passed criteria remain closed unless the repair changes their referenced design area or evidence shows a regression.
+6. Re-verify the failed criteria after each repair. Do not send the complete Acceptance region to the repair agent.
+7. When no failed criteria remain, perform final acceptance from fresh extractions of both complete regions, rerun every Acceptance Criterion, and rerun every Rollout Acceptance check. Only an all-PASS result may finish the workflow.
 
 ## Model Selection
 
@@ -124,6 +163,7 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 - `./implementer-prompt.md` - Dispatch implementer subagent
 - `./spec-reviewer-prompt.md` - Dispatch spec compliance reviewer subagent
 - `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent
+- `./repair-prompt.md` - Dispatch minimal-context repairs for failed Acceptance Criteria
 
 ## Example Workflow
 
@@ -131,7 +171,8 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 You: I'm using Subagent-Driven Development to execute this plan.
 
 [Read plan file once: docs/superpowers/plans/feature-plan.md]
-[Extract all 5 tasks with full text and context]
+[Extract Implementation Spec only with spec-sections]
+[Extract all 5 `### Task N` sections with full text and context; keep checkbox steps inside their parent task]
 [Create TodoWrite with all tasks]
 
 Task 1: Hook installation script
@@ -195,8 +236,11 @@ Code reviewer: ✅ Approved
 ...
 
 [After all tasks]
-[Dispatch final code-reviewer]
-Final reviewer: All requirements met, ready to merge
+[Extract complete Implementation Spec and Acceptance regions separately]
+[Dispatch independent acceptance reviewer with Design → Acceptance → Diff → Tests]
+Acceptance reviewer: AC-01..AC-08 PASS with required evidence
+[Freshly extract both complete regions and rerun every AC]
+Final acceptance: all criteria PASS, ready to finish
 
 Done!
 ```
@@ -241,6 +285,7 @@ Done!
 - Proceed with unfixed issues
 - Dispatch multiple implementation subagents in parallel (conflicts)
 - Make subagent read plan file (provide full text instead)
+- Treat checkbox steps inside a task as separate subagent tasks or review boundaries
 - Skip scene-setting context (subagent needs to understand where task fits)
 - Ignore subagent questions (answer before letting them proceed)
 - Accept "close enough" on spec compliance (spec reviewer found issues = not done)
@@ -248,6 +293,10 @@ Done!
 - Let implementer self-review replace actual review (both are needed)
 - **Start code quality review before spec compliance is ✅** (wrong order)
 - Move to next task while either review has open issues
+- Read the original single-file spec during initial implementation
+- Send Acceptance Criteria to an initial implementer
+- Repair from the complete Acceptance region when a failed-criterion packet is sufficient
+- Finish after partial re-verification without a fresh full final acceptance
 
 **If subagent asks questions:**
 - Answer clearly and completely

@@ -88,7 +88,7 @@ digraph brainstorming {
 - Once you believe you understand what you're building, present the design
 - Scale each section to its complexity: a few sentences if straightforward, up to 200-300 words if nuanced
 - Ask after each section whether it looks right so far
-- Cover: architecture, components, data flow, error handling, testing
+- Cover: architecture, components, data flow, error handling, testing, acceptance criteria
 - Be ready to go back and clarify if something doesn't make sense
 
 **Design for isolation and clarity:**
@@ -110,8 +110,109 @@ digraph brainstorming {
 
 - Write the validated design (spec) to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`
   - (User preferences for spec location override this default)
+- Every new spec MUST use the exact single-file region structure below
+- Keep Acceptance Criteria and the Verification Protocol in the same spec unless the toolchain explicitly requires a separate input
 - Use elements-of-style:writing-clearly-and-concisely skill if available
 - Commit the design document to git
+
+### Required Single-File Structure
+
+The markers are a machine-readable interface. Copy them exactly, each once, without nesting:
+
+```markdown
+<!-- IMPLEMENTATION-SPEC-BEGIN -->
+
+# Goal
+# Non-Goals
+# Architecture
+# Detailed Design
+# Error Handling
+# Testing Strategy
+
+<!-- IMPLEMENTATION-SPEC-END -->
+
+<!-- ACCEPTANCE-BEGIN -->
+
+# Completion Contract
+# Verification Protocol
+# Acceptance Criteria
+# Rollout Acceptance
+
+<!-- ACCEPTANCE-END -->
+```
+
+The Implementation Spec region contains the complete normative design and testing strategy. The Acceptance region converts those requirements into completion checks; it MUST NOT introduce new product behavior or widen scope.
+
+### Mechanical Validation
+
+Resolve `spec-sections` relative to this skill directory. After writing or editing a spec, run:
+
+```bash
+# Equivalent CLI: spec-sections validate <spec>
+"<brainstorming-skill-directory>/spec-sections" validate "<spec-path>"
+```
+
+Validation must succeed before review or planning. Missing, duplicate, empty, nested, or out-of-order regions are blocking errors. Never recover by reading or sending the complete file.
+
+For the spec-writing review only, extract both validated regions:
+
+```bash
+# Equivalent CLI: spec-sections full <spec>
+"<brainstorming-skill-directory>/spec-sections" full "<spec-path>" > /tmp/spec-full.md
+```
+
+Pass the extracted content as `[FULL_EXTRACTED_SPEC]` to `spec-document-reviewer-prompt.md`. Do not give the reviewer the original spec path.
+
+**Legacy policy:** New specs use markers. Old unmarked specs are rejected by default. A human or harness may explicitly select `--legacy full`; the tool logs that isolation is disabled. Partial or malformed markers always fail.
+
+See `spec-sections.md` in this skill directory for the command and stage-input reference.
+
+### Acceptance Criteria Format
+
+Acceptance Criteria are executable review cases, not summaries of the requirements. They translate the spec's complete semantics into repeatable checks that cannot pass through superficial inspection.
+
+Write each criterion in this form:
+
+```markdown
+### AC-01: <Acceptance goal>
+
+**Requirement:** <One complete, outcome-determining semantic requirement>
+
+**Verification Steps:**
+1. <Inspect a named source location, run a named test/command, or exercise a specific runtime behavior>
+
+**Pass Conditions:** <The exact observable result required for PASS>
+
+**Fail Conditions:** <Specific results, omissions, misclassification, duplication, or shortcuts that require FAIL>
+
+**Required Evidence:** <Files and line numbers, test names and output, logs, screenshots, or other concrete artifacts>
+```
+
+Rules for every criterion:
+
+- Make it atomic: one criterion verifies one semantic requirement. Split independently failing requirements into separate criteria.
+- Make it independently decidable. The verifier must not need to guess what success means.
+- Do not use `exactly`, `all`, `only`, or `as defined above` as substitutes for detail. When a referenced definition determines the result, inline the requirements that determine the result in the criterion.
+- Name the source, test, command, or runtime behavior that must be inspected and state both pass and fail outcomes.
+- Require evidence specific enough for another reviewer to reproduce the decision.
+- A field, function, test, or stage name merely existing is not sufficient evidence that its semantics are correct.
+- A passing full test suite does not replace semantic source or runtime verification.
+- Cover every implementation-significant requirement in the spec. Acceptance Criteria do not narrow or replace the detailed requirements.
+
+## Verification Protocol
+
+Include this protocol in every spec:
+
+```markdown
+- Verify each Acceptance Criterion independently; do not approve from aggregate test results alone.
+- When a criterion references another spec definition, read and compare the complete definition.
+- Report PASS, FAIL, or NOT VERIFIED for every criterion.
+- A PASS must include all Required Evidence named by the criterion.
+- Missing required evidence means the criterion is NOT VERIFIED, not PASS.
+- Test success does not replace required source, boundary, or runtime semantic checks.
+- Execute Rollout Acceptance checks with the same evidence rules.
+- Only when every criterion and every Rollout Acceptance check is PASS may the task and automated loop stop.
+```
 
 **Spec Self-Review:**
 After writing the spec document, look at it with fresh eyes:
@@ -120,6 +221,11 @@ After writing the spec document, look at it with fresh eyes:
 2. **Internal consistency:** Do any sections contradict each other? Does the architecture match the feature descriptions?
 3. **Scope check:** Is this focused enough for a single implementation plan, or does it need decomposition?
 4. **Ambiguity check:** Could any requirement be interpreted two different ways? If so, pick one and make it explicit.
+5. **Acceptance coverage:** Does every implementation-significant requirement map to at least one atomic criterion without losing boundary conditions or exact semantics?
+6. **Acceptance rigor:** Does every criterion contain Requirement, Verification Steps, Pass Conditions, Fail Conditions, and Required Evidence? Could any criterion pass from existence checks or aggregate test success alone? If so, rewrite it.
+7. **Protocol check:** Is the Verification Protocol present, and does it require per-criterion status, evidence-backed PASS decisions, and all criteria passing before completion?
+8. **Region check:** Did `spec-sections validate` pass? Is all normative design inside the Implementation Spec region and all completion/rollout checks inside the Acceptance region?
+9. **Scope mapping:** Does every Acceptance Criterion map to a named requirement or section in the Implementation Spec, without adding scope?
 
 Fix any issues inline. No need to re-review — just fix and move on.
 

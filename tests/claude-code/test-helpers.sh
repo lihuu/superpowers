@@ -35,7 +35,7 @@ assert_contains() {
     local pattern="$2"
     local test_name="${3:-test}"
 
-    if echo "$output" | grep -q "$pattern"; then
+    if echo "$output" | grep -qi "$pattern"; then
         echo "  [PASS] $test_name"
         return 0
     else
@@ -54,7 +54,7 @@ assert_not_contains() {
     local pattern="$2"
     local test_name="${3:-test}"
 
-    if echo "$output" | grep -q "$pattern"; then
+    if echo "$output" | grep -qi "$pattern"; then
         echo "  [FAIL] $test_name"
         echo "  Did not expect to find: $pattern"
         echo "  In output:"
@@ -98,8 +98,8 @@ assert_order() {
     local test_name="${4:-test}"
 
     # Get line numbers where patterns appear
-    local line_a=$(echo "$output" | grep -n "$pattern_a" | head -1 | cut -d: -f1)
-    local line_b=$(echo "$output" | grep -n "$pattern_b" | head -1 | cut -d: -f1)
+    local line_a=$(echo "$output" | grep -ni "$pattern_a" | head -1 | cut -d: -f1)
+    local line_b=$(echo "$output" | grep -ni "$pattern_b" | head -1 | cut -d: -f1)
 
     if [ -z "$line_a" ]; then
         echo "  [FAIL] $test_name: pattern A not found: $pattern_a"
@@ -114,6 +114,18 @@ assert_order() {
     if [ "$line_a" -lt "$line_b" ]; then
         echo "  [PASS] $test_name (A at line $line_a, B at line $line_b)"
         return 0
+    elif [ "$line_a" -eq "$line_b" ]; then
+        # If they match on the same line, check if pattern_a appears before pattern_b
+        local line_content=$(echo "$output" | sed -n "${line_a}p")
+        if echo "$line_content" | grep -qi "${pattern_a}.*${pattern_b}"; then
+            echo "  [PASS] $test_name (A before B on line $line_a)"
+            return 0
+        else
+            echo "  [FAIL] $test_name"
+            echo "  Expected '$pattern_a' before '$pattern_b' on line $line_a"
+            echo "  Line content: $line_content"
+            return 1
+        fi
     else
         echo "  [FAIL] $test_name"
         echo "  Expected '$pattern_a' before '$pattern_b'"

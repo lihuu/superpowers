@@ -18,6 +18,21 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 **Save plans to:** `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
 - (User preferences for plan location override this default)
 
+## Stage Input: Implementation Only
+
+Before reading requirements for planning, resolve `spec-sections` relative to the brainstorming skill directory and extract the Implementation Spec to a temporary file:
+
+```bash
+SPEC_SECTIONS="<brainstorming-skill-directory>/spec-sections"
+LEGACY_POLICY="${SUPERPOWERS_SPEC_LEGACY_POLICY:-reject}"
+# Equivalent CLI: spec-sections implementation <spec>
+"$SPEC_SECTIONS" --legacy "$LEGACY_POLICY" implementation "$SPEC_PATH" > /tmp/implementation-spec.md
+```
+
+Read `/tmp/implementation-spec.md`, not the original spec. Acceptance content MUST NOT enter the planning agent's context. If extraction fails, stop; do not fall back to the complete file or infer sections from Markdown headings.
+
+With explicit `SUPERPOWERS_SPEC_LEGACY_POLICY=full`, old unmarked specs retain whole-file behavior and the command logs that staged isolation is disabled. New and partially marked specs must validate strictly.
+
 ## Scope Check
 
 If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
@@ -56,6 +71,10 @@ This structure informs the task decomposition. Each task should produce self-con
 **Architecture:** [2-3 sentences about approach]
 
 **Tech Stack:** [Key technologies/libraries]
+
+**Spec:** [Path to the single-file spec]
+
+**Spec Input Mode:** staged implementation extraction | explicit legacy full
 
 ---
 ```
@@ -123,13 +142,15 @@ Every step must contain the actual content an engineer needs. These are **plan f
 
 After writing the complete plan, look at the spec with fresh eyes and check the plan against it. This is a checklist you run yourself — not a subagent dispatch.
 
-**1. Spec coverage:** Skim each section/requirement in the spec. Can you point to a task that implements it? List any gaps.
+**1. Spec coverage:** Skim each section/requirement in the extracted Implementation Spec. Can you point to a task that implements it? List any gaps.
 
-**2. Placeholder scan:** Search your plan for red flags — any of the patterns from the "No Placeholders" section above. Fix them.
+**2. Context isolation:** Confirm the plan was produced from the extracted Implementation Spec only. Do not add tasks solely because they appear in Acceptance Criteria.
 
-**3. Type consistency:** Do the types, method signatures, and property names you used in later tasks match what you defined in earlier tasks? A function called `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
+**3. Placeholder scan:** Search your plan for red flags — any of the patterns from the "No Placeholders" section above. Fix them.
 
-If you find issues, fix them inline. No need to re-review — just fix and move on. If you find a spec requirement with no task, add the task.
+**4. Type consistency:** Do the types, method signatures, and property names you used in later tasks match what you defined in earlier tasks? A function called `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
+
+If you find issues, fix them inline. No need to re-review — just fix and move on. If you find an Implementation Spec requirement with no task, add the task.
 
 ## Execution Handoff
 

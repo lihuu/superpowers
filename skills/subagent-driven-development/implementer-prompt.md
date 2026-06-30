@@ -8,9 +8,19 @@ Task tool (general-purpose):
   prompt: |
     You are implementing Task N: [task name]
 
+    ## Implementation Spec Context
+
+    [IMPLEMENTATION_SPEC_CONTENT]
+
+    This content was mechanically extracted from the Implementation Spec region.
+    Acceptance content must not be provided to an initial implementation agent.
+
     ## Task Description
 
     [FULL TEXT of task from plan - paste it here, don't make subagent read file]
+
+    This is the complete plan task. Checkbox steps inside it are your TDD
+    execution sequence; complete all of them before reporting DONE.
 
     ## Context
 
@@ -19,7 +29,7 @@ Task tool (general-purpose):
     ## Before You Begin
 
     If you have questions about:
-    - The requirements or acceptance criteria
+    - The requirements in the Implementation Spec or task
     - The approach or implementation strategy
     - Dependencies or assumptions
     - Anything unclear in the task description
@@ -76,7 +86,7 @@ Task tool (general-purpose):
     Review your work with fresh eyes. Ask yourself:
 
     **Completeness:**
-    - Did I fully implement everything in the spec?
+    - Did I fully implement everything assigned from the Implementation Spec?
     - Did I miss any requirements?
     - Are there edge cases I didn't handle?
 

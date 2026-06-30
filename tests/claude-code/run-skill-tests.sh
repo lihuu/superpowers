@@ -57,6 +57,9 @@ while [[ $# -gt 0 ]]; do
             echo "  --help, -h           Show this help"
             echo ""
             echo "Tests:"
+            echo "  test-acceptance-criteria-requirement.sh  Verify specs require acceptance criteria"
+            echo "  test-spec-sections.sh                  Verify strict spec region parsing"
+            echo "  test-staged-spec-workflow.sh           Verify stage-specific skill inputs"
             echo "  test-subagent-driven-development.sh  Test skill loading and requirements"
             echo ""
             echo "Integration Tests (use --integration):"
@@ -73,6 +76,9 @@ done
 
 # List of skill tests to run (fast unit tests)
 tests=(
+    "test-acceptance-criteria-requirement.sh"
+    "test-spec-sections.sh"
+    "test-staged-spec-workflow.sh"
     "test-subagent-driven-development.sh"
 )
 

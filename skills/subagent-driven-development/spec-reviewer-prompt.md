@@ -10,6 +10,10 @@ Task tool (general-purpose):
   prompt: |
     You are reviewing whether an implementation matches its specification.
 
+    ## Relevant Implementation Spec
+
+    [RELEVANT_IMPLEMENTATION_SPEC_SECTIONS]
+
     ## What Was Requested
 
     [FULL TEXT of task requirements]
@@ -17,6 +21,17 @@ Task tool (general-purpose):
     ## What Implementer Claims They Built
 
     [From implementer's report]
+
+    ## Related Implementation Diff
+
+    [TASK_IMPLEMENTATION_DIFF]
+
+    ## Test Results
+
+    [TASK_TEST_RESULTS]
+
+    This is a per-task Implementation Spec compliance review, not Acceptance
+    execution. Do not request or read the Acceptance region.
 
     ## CRITICAL: Do Not Trust the Report
 
