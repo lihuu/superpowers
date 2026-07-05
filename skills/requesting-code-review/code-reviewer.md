@@ -5,7 +5,7 @@ Use this template when dispatching a code reviewer subagent.
 **Purpose:** Review completed work against requirements and code quality standards before it cascades into more work.
 
 ```
-Task tool (general-purpose):
+Subagent (general-purpose):
   description: "Review code changes"
   prompt: |
     You are a Senior Code Reviewer with expertise in software architecture,
@@ -36,10 +36,25 @@ Task tool (general-purpose):
 
     ## Implementer Summary
 
-    {DESCRIPTION}
+    [DESCRIPTION]
 
-    Treat this summary as an untrusted claim. The four preceding inputs are the
-    evidence and must be evaluated independently.
+    ## Requirements / Plan
+
+    [PLAN_OR_REQUIREMENTS]
+
+    ## Git Range to Review
+
+    **Base:** [BASE_SHA]
+    **Head:** [HEAD_SHA]
+
+    ```bash
+    git diff --stat [BASE_SHA]..[HEAD_SHA]
+    git diff [BASE_SHA]..[HEAD_SHA]
+    ```
+
+    ## Read-Only Review
+
+    Your review is read-only on this checkout. Do not mutate the working tree, the index, HEAD, or branch state in any way. Use tools like `git show`, `git diff`, and `git log` to inspect history. If you need a working copy of a different revision, check it out into a separate temporary directory (e.g. `git worktree add /tmp/review-[SHA] [SHA]`) — never move HEAD on this checkout.
 
     ## What to Check
 
@@ -155,13 +170,10 @@ Task tool (general-purpose):
 ```
 
 **Placeholders:**
-- `{DESCRIPTION}` — brief summary of what was built
-- `{IMPLEMENTATION_SPEC}` — complete extracted design, or explicit requirements when no formal Spec exists
-- `{ACCEPTANCE_CONTRACT}` — complete extracted acceptance region, or a no-formal-acceptance notice
-- `{IMPLEMENTATION_DIFF}` — actual diff content
-- `{TEST_RESULTS}` — fresh test command and output
-- `{BASE_SHA}` — starting commit
-- `{HEAD_SHA}` — ending commit
+- `[DESCRIPTION]` — brief summary of what was built
+- `[PLAN_OR_REQUIREMENTS]` — what it should do (plan file path, task text, or requirements)
+- `[BASE_SHA]` — starting commit
+- `[HEAD_SHA]` — ending commit
 
 **Reviewer returns:** Strengths, Issues (Critical / Important / Minor), Recommendations, Assessment
 

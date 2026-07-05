@@ -11,34 +11,15 @@ Load plan, review critically, execute all tasks, report when complete.
 
 **Announce at start:** "I'm using the executing-plans skill to implement this plan."
 
-**Note:** Tell your human partner that Superpowers works much better with access to subagents. The quality of its work will be significantly higher if run on a platform with subagent support (such as Claude Code or Codex). If subagents are available, use superpowers:subagent-driven-development instead of this skill.
+**Note:** Tell your human partner that Superpowers works much better with access to subagents. The quality of its work will be significantly higher if run on a platform with subagent support (Claude Code, Codex CLI, Codex App, and Copilot CLI all qualify; see the per-platform tool refs in `../using-superpowers/references/`). If subagents are available, use superpowers:subagent-driven-development instead of this skill.
 
 ## The Process
 
 ### Step 1: Load and Review Plan
 1. Read plan file
-2. Read the `**Spec:**` path and `**Spec Input Mode:**` from the plan header
-3. Resolve `spec-sections` relative to the brainstorming skill directory and run:
-
-```bash
-SPEC_SECTIONS="<brainstorming-skill-directory>/spec-sections"
-LEGACY_POLICY="${SUPERPOWERS_SPEC_LEGACY_POLICY:-reject}"
-# Equivalent CLI: spec-sections implementation <spec>
-"$SPEC_SECTIONS" --legacy "$LEGACY_POLICY" implementation "$SPEC_PATH" > /tmp/implementation-spec.md
-```
-
-4. Read the plan and `/tmp/implementation-spec.md`. Do not read the original spec file; doing so would place Acceptance content in the implementation context.
-5. Review critically - identify any questions or concerns about the plan against the extracted Implementation Spec
-6. If extraction fails or concerns remain: stop and raise them with your human partner
-7. Record the implementation diff base before changing code:
-
-```bash
-BASE_SHA=$(git rev-parse HEAD)
-```
-
-8. If no concerns: Create TodoWrite and proceed
-
-For older plans without a Spec header, report that staged isolation is unavailable and require either an explicit spec path or explicit continuation under legacy plan-only behavior. Never guess a spec path.
+2. Review critically - identify any questions or concerns about the plan
+3. If concerns: Raise them with your human partner before starting
+4. If no concerns: Create todos for the plan items and proceed
 
 ### Step 2: Execute Tasks
 
