@@ -22,6 +22,8 @@ Take over partially completed work by locating the existing context, verifying t
 | :--- | :--- |
 | User provides a handoff path | Read that file first |
 | No path is provided | Find the newest Markdown file in `docs/superpowers/handoffs/` |
+| Handoff references a transcript | Treat it as evidence, not the primary handoff |
+| No handoff exists but transcript exists | Use Transcript Fallback |
 | Handoff state matches workspace | Resume from `Next Immediate Action` |
 | State differs materially | Report `State mismatch` and wait for confirmation |
 
@@ -29,22 +31,44 @@ Take over partially completed work by locating the existing context, verifying t
 
 1. Prefer an explicit handoff path from the user's message.
 2. If no path was provided, locate the newest `*.md` file in `docs/superpowers/handoffs/`.
-3. If no handoff exists, inspect `git status --short`, recent commits, active specs/plans, and ask the user what context to use before executing.
-4. Announce: `I am taking over from <handoff-path>.`
+3. If no handoff exists but the user provided a raw transcript, conversation, or session path, use Transcript Fallback.
+4. If no handoff or transcript exists, inspect `git status --short`, recent commits, active specs/plans, and ask the user what context to use before executing.
+5. Announce: `I am taking over from <handoff-path>.`
 
 ## Read Handoff
 
 Read the handoff before executing. Extract:
 
 - Current objective
+- Decision state
+- What was tried
 - Work completed
 - Pending tasks
 - `Next Immediate Action`
 - Modified files
 - Git state
 - Mental state and blockers
+- Source transcript, if present
 
 If the handoff has no `Next Immediate Action`, report `State mismatch` and ask for confirmation before continuing.
+
+## Transcript Fallback
+
+Do not read raw transcripts first when a handoff file is available. Raw transcripts are evidence, not the execution entry point.
+
+Use Transcript Fallback only when:
+
+- No handoff file exists.
+- The handoff is incomplete and points to a transcript.
+- State verification fails and the transcript may explain the mismatch.
+- The user explicitly instructs you to reconstruct the handoff from the original conversation.
+
+When using Transcript Fallback:
+
+1. Read only the transcript sections needed to reconstruct the current objective, completed work, decisions, modified files, blockers, and next action.
+2. Build a temporary handoff summary in your working context before executing.
+3. Run workspace-state verification.
+4. Resume only after the reconstructed next action is grounded in both transcript evidence and current workspace state.
 
 ## Verify Workspace State
 
@@ -98,5 +122,6 @@ Proceed without asking only when:
 
 - **Trusting the handoff blindly:** Always verify the workspace before executing.
 - **Using "latest" when a path is available:** Prefer the exact handoff file named by the user.
+- **Reading transcripts first:** Do not read raw transcripts first when a handoff exists; use them only to resolve gaps or mismatches.
 - **Skipping mismatch details:** Name the exact branch, commit, or file discrepancy.
 - **Re-brainstorming the task:** Takeover resumes existing work; it does not restart design unless the handoff is unusable.

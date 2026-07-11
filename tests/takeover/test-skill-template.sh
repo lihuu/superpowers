@@ -7,6 +7,8 @@ for required in \
     "Locate" \
     "Verify" \
     "Resume" \
+    "Transcript Fallback" \
+    "Do not read raw transcripts first" \
     "Next Immediate Action" \
     "State mismatch" \
     "State matches"; do
