@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Extract one packet's full text from the controller-generated packet list
+# into a file the implementer reads in one call, so the packet text never
+# has to be pasted through the controller's context.
+#
+# Unlike task-brief (which slices "Task N" headings out of the plan file),
+# packet-brief slices "Packet N" sections out of <workspace>/packets.md —
+# the file the controller writes during Packetization, where each packet is
+# one or more adjacent plan tasks merged into a single dispatch unit. The plan
+# file itself has no "Packet N" headings, so packets.md is the source.
+#
+# Usage: packet-brief PLAN_FILE PACKET_NUMBER [OUTFILE]
+# Default OUTFILE: <repo-root>/.superpowers/sdd/<plan-basename>/packet-<N>-brief.md
+set -euo pipefail
+
+if [ $# -lt 2 ] || [ $# -gt 3 ]; then
+  echo "usage: packet-brief PLAN_FILE PACKET_NUMBER [OUTFILE]" >&2
+  exit 2
+fi
+
+plan=$1
+n=$2
+[ -f "$plan" ] || { echo "no such plan file: $plan" >&2; exit 2; }
+
+if [ $# -eq 3 ]; then
+  out=$3
+else
+  dir=$("$(cd "$(dirname "$0")" && pwd)/sdd-workspace" "$plan")
+  out="$dir/packet-${n}-brief.md"
+fi
+
+dir=$("$(cd "$(dirname "$0")" && pwd)/sdd-workspace" "$plan")
+src="$dir/packets.md"
+[ -f "$src" ] || { echo "no packets.md at ${src} — run Packetization first (see SKILL.md)" >&2; exit 3; }
+
+# Slice the "## Packet N" section out of packets.md. A section runs from its
+# "## Packet N:" heading up to the next "## Packet " heading (or EOF). Match
+# the exact packet number, not a prefix (Packet 1 must not match Packet 10).
+awk -v n="$n" '
+  /^##[ \t]+Packet[ \t]+[0-9]+/ {
+    inpkt = ($0 ~ ("^##[ \t]+Packet[ \t]+" n "([^0-9]|$)"))
+  }
+  inpkt { print }
+' "$src" > "$out"
+
+if [ ! -s "$out" ]; then
+  echo "packet ${n} not found in ${src} (no heading matching '## Packet ${n}:')" >&2
+  exit 3
+fi
+
+echo "wrote ${out}: $(wc -l < "$out" | tr -d ' ') lines"

@@ -3,28 +3,36 @@
 Use this template when dispatching an implementer subagent for one implementation packet.
 
 ```
-Task tool (general-purpose):
-  description: "Implement packet: [packet name]"
+Subagent (general-purpose):
+  description: "Implement Packet N: [packet name]"
+  model: [MODEL — REQUIRED: choose per SKILL.md Model Selection; an omitted
+         model silently inherits the session's most expensive one]
   prompt: |
-    You are implementing exactly one implementation packet.
+    You are implementing Packet N: [packet name]
 
-    ## Implementation Spec Context
+    ## Packet Brief
 
-    [IMPLEMENTATION_SPEC_CONTENT]
-
-    This content was mechanically extracted from the Implementation Spec region.
-    Acceptance content must not be provided to an initial implementation agent.
-
-    ## Implementation Packet
-
-    [FULL PACKET TEXT]
-
-    This is the complete implementation packet. Complete every checkbox step inside the packet before reporting DONE.
-    Checkbox steps are TDD execution checkpoints, not separate dispatch boundaries.
+    Read your packet brief first: [BRIEF_FILE]
+    It contains the full packet text from the plan — your requirements,
+    with the exact values to use verbatim. Checkbox steps inside the packet
+    are TDD execution checkpoints, not separate dispatch boundaries;
+    complete every one before reporting DONE.
 
     ## Context
 
-    [Relevant architecture, dependencies, file ownership, and test commands]
+    [Scene-setting: where this packet fits in the project, dependencies on
+    earlier packets, architectural context, file ownership, expected test
+    commands. One or two lines — do not paste prior-packet summaries.]
+
+    ## Before You Begin
+
+    If you have questions about:
+    - The requirements or acceptance criteria
+    - The approach or implementation strategy
+    - Dependencies or assumptions
+    - Anything unclear in the packet brief
+
+    **Ask them now.** Raise any concerns before starting work.
 
     ## Your Job
 
@@ -32,33 +40,136 @@ Task tool (general-purpose):
     1. Follow the packet's TDD sequence
     2. Implement only this packet's scope
     3. Run relevant tests
-    4. Commit this packet as one commit
-    5. Report status, changed files, commit SHA, commands run, and concerns
+    4. Commit this packet as one commit (commit message describes the packet
+       outcome — not one commit per checkbox microstep)
+    5. Self-review (see below)
+    6. Report back
 
-    Do not create one commit per checkbox microstep. The commit message should
-    describe the packet outcome.
+    Work from: [directory]
 
-    ## Ask Before Implementing If
+    **While you work:** If you encounter something unexpected or unclear, **ask questions**.
+    It's always OK to pause and clarify. Don't guess or make assumptions.
 
-    - Requirements conflict
-    - The packet boundary is too large or too small
-    - Required context is missing
-    - The implementation needs files outside the packet's stated scope
-    - You see a risk that should change execution order
+    While iterating, run the focused test for what you're changing; run the
+    full suite once before committing, not after every edit.
 
-    ## Status Values
+    ## Code Organization
 
-    - DONE: packet implemented, tested, and committed
-    - DONE_WITH_CONCERNS: packet committed but concerns remain
-    - NEEDS_CONTEXT: missing information prevents safe implementation
-    - BLOCKED: cannot proceed without changing plan, packet boundary, model capability, or user decision
+    You reason best about code you can hold in context at once, and your edits are more
+    reliable when files are focused. Keep this in mind:
+    - Follow the file structure defined in the plan
+    - Each file should have one clear responsibility with a well-defined interface
+    - If a file you're creating is growing beyond the plan's intent, stop and report
+      it as DONE_WITH_CONCERNS — don't split files on your own without plan guidance
+    - If an existing file you're modifying is already large or tangled, work carefully
+      and note it as a concern in your report
+    - In existing codebases, follow established patterns. Improve code you're touching
+      the way a good developer would, but don't restructure things outside your packet.
+
+    ## When You're in Over Your Head
+
+    It is always OK to stop and say "this is too hard for me." Bad work is worse than
+    no work. You will not be penalized for escalating.
+
+    **STOP and escalate when:**
+    - The packet requires architectural decisions with multiple valid approaches
+    - You need to understand code beyond what was provided and can't find clarity
+    - You feel uncertain about whether your approach is correct
+    - The packet involves restructuring existing code in ways the plan didn't anticipate
+    - You've been reading file after file trying to understand the system without progress
+
+    **How to escalate:** Report back with status BLOCKED or NEEDS_CONTEXT. Describe
+    specifically what you're stuck on, what you've tried, and what kind of help you need.
+    The controller can provide more context, re-dispatch with a more capable model,
+    or split the packet into smaller pieces.
+
+    ## Before Reporting Back: Self-Review
+
+    Review your work with fresh eyes. Ask yourself:
+
+    **Completeness:**
+    - Did I fully implement everything in the packet?
+    - Did I miss any requirements or checkbox steps?
+    - Are there edge cases I didn't handle?
+
+    **Quality:**
+    - Is this my best work?
+    - Are names clear and accurate (match what things do, not how they work)?
+    - Is the code clean and maintainable?
+
+    **Discipline:**
+    - Did I avoid overbuilding (YAGNI)?
+    - Did I only build what was requested?
+    - Did I follow existing patterns in the codebase?
+
+    **Testing:**
+    - Do tests actually verify behavior (not just mock behavior)?
+    - Did I follow TDD if the packet required it?
+    - Are tests comprehensive?
+    - Is the test output pristine (no stray warnings or noise)?
+
+    If you find issues during self-review, fix them now before reporting.
+
+    ## After You Report
+
+    In fast-subagent-development the final review happens once, after all
+    packets are complete — there is no per-packet review. Once you report
+    DONE, your work on this packet is finished; the controller will not
+    resume you.
+
+    If the final review later finds issues in your packet, the controller
+    dispatches a **fresh repair subagent** (not you) using the repair
+    prompt. That repair subagent reads your packet brief and your report
+    file, fixes the findings, re-runs the covering tests, and **appends its
+    fix report to the same report file** you wrote. Your report is the
+    persistent memory the repair subagent starts from — that is why the
+    report format below asks for TDD evidence and covering-test output, not
+    just a summary.
+
+    This does not change what you do now: implement, test, self-review,
+    write a complete report, and return the short status contract. The
+    report file is the artifact that survives the rest of the run.
 
     ## Report Format
 
-    - Status: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
-    - Commit: [commit SHA or "none"]
+    Write your full report to [REPORT_FILE]:
+    - What you implemented (or what you attempted, if blocked)
+    - What you tested and test results
+    - **TDD Evidence** (if TDD was required for this packet):
+      - RED: command run, relevant failing output before implementation, and why the failure was expected
+      - GREEN: command run and relevant passing output after implementation
     - Files changed
-    - Commands run and results
-    - What was implemented
-    - Concerns or blockers
+    - Commit SHA
+    - Self-review findings (if any)
+    - Any issues or concerns
+
+    Then report back with ONLY (under 15 lines — the detail lives in the
+    report file):
+    - **Status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
+    - Commit (short SHA + subject)
+    - One-line test summary (e.g. "14/14 passing, output pristine")
+    - Your concerns, if any
+    - The report file path
+
+    If BLOCKED or NEEDS_CONTEXT, put the specifics in the final message
+    itself — the controller acts on it directly.
+
+    Use DONE_WITH_CONCERNS if you completed the work but have doubts about correctness.
+    Use BLOCKED if you cannot complete the packet. Use NEEDS_CONTEXT if you need
+    information that wasn't provided. Never silently produce work you're unsure about.
 ```
+
+**Placeholders:**
+- `[MODEL]` — REQUIRED: per SKILL.md Model Selection. A mechanical packet
+  (1-2 files, complete spec) takes a cheap model; an integration packet
+  takes a standard model; an architecture packet takes the most capable
+  model.
+- `[BRIEF_FILE]` — REQUIRED: the path `scripts/packet-brief PLAN_FILE N`
+  prints. The packet text never enters the controller's context.
+- `[REPORT_FILE]` — REQUIRED: `<workspace>/packet-N-report.md`. The
+  implementer writes its full report here; repair rounds append to the same
+  file.
+
+**Implementer returns:** status, commit, one-line test summary, concerns,
+report-file path. The full report stays in the file, not the controller's
+context.
