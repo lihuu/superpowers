@@ -83,24 +83,19 @@ echo "=== All tests passed ==="
 ### Fast Tests (run by default)
 
 #### test-acceptance-criteria-requirement.sh
-Static check for spec acceptance criteria requirements:
-- brainstorming requires structured, atomic acceptance cases and a verification protocol
+Static check for acceptance criteria format requirements:
+- acceptance-review defines structured, atomic acceptance cases and a verification protocol
 - criteria define verification steps, pass/fail conditions, and required evidence
 - superficial existence checks and aggregate test success cannot replace semantic verification
-- spec review and independent acceptance preserve the complete acceptance contract
-
-#### test-spec-sections.sh
-Black-box tests for the staged single-file Spec parser:
-- strict marker count, pairing, order, nesting, and non-empty region validation
-- LF/CRLF handling and similar non-marker text
-- no stdout leakage on parse failure
-- implementation/acceptance/full extraction and explicit legacy behavior
+- reviewer and repair prompts preserve the complete acceptance contract
 
 #### test-staged-spec-workflow.sh
 Static workflow contract checks:
-- plan and initial implementation stages receive only Implementation Spec content
-- independent acceptance receives Design, Acceptance, Diff, then test results
+- design spec and companion acceptance file are separate (physical isolation)
+- implementers and planners do not receive acceptance content
+- independent acceptance receives design spec, acceptance file, diff, then test results
 - repair loops receive only failed criteria and their required context
+- no skill references the deprecated spec-sections script or region markers
 
 #### test-subagent-driven-development.sh
 Tests skill content and requirements (~2 minutes):

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Test: skills enforce staged single-file spec context isolation
+# Test: skills enforce staged spec context isolation via separate files
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -58,38 +58,40 @@ check_order() {
     fi
 }
 
-echo "=== Test: staged spec workflow contracts ==="
+echo "=== Test: staged spec workflow contracts (separate files) ==="
 echo ""
 
-# brainstorming: spec producer — must have markers, validation, and acceptance format
-check_contains "skills/brainstorming/SKILL.md" "<!-- IMPLEMENTATION-SPEC-BEGIN -->" \
-    "new specs contain implementation begin marker"
-check_contains "skills/brainstorming/SKILL.md" "<!-- ACCEPTANCE-END -->" \
-    "new specs contain acceptance end marker"
-check_contains "skills/brainstorming/SKILL.md" "spec-sections validate" \
-    "spec writing validates marker structure mechanically"
-check_contains "skills/brainstorming/SKILL.md" "Acceptance Criteria Format" \
-    "spec writing defines acceptance criteria format"
-check_contains "skills/brainstorming/SKILL.md" "Verification Protocol" \
-    "spec writing includes verification protocol"
-check_contains "skills/brainstorming/spec-document-reviewer-prompt.md" "[FULL_EXTRACTED_SPEC]" \
-    "spec reviewer receives extracted full spec content"
+# brainstorming: upstream original + companion acceptance mention
+check_contains "skills/brainstorming/SKILL.md" "YYYY-MM-DD-<topic>-design.md" \
+    "brainstorming writes design spec"
+check_contains "skills/brainstorming/SKILL.md" "acceptance-review" \
+    "brainstorming mentions acceptance-review skill"
+check_contains "skills/brainstorming/SKILL.md" "companion file" \
+    "brainstorming describes companion acceptance file"
+check_excludes "skills/brainstorming/SKILL.md" "spec-sections" \
+    "brainstorming does not reference spec-sections"
+check_excludes "skills/brainstorming/SKILL.md" "IMPLEMENTATION-SPEC-BEGIN" \
+    "brainstorming does not use region markers"
 
-# acceptance-review: the new independent skill — must have extraction, reviewer, repair
-check_contains "skills/acceptance-review/SKILL.md" "spec-sections implementation" \
-    "acceptance review extracts implementation region"
-check_contains "skills/acceptance-review/SKILL.md" "spec-sections acceptance" \
-    "acceptance review extracts acceptance region"
-check_contains "skills/acceptance-review/SKILL.md" "Do not read the original spec file" \
-    "acceptance review forbids loading the complete spec"
+# acceptance-review: the independent skill — must read files directly, no extraction
+check_contains "skills/acceptance-review/SKILL.md" "design spec" \
+    "acceptance review reads design spec"
+check_contains "skills/acceptance-review/SKILL.md" "companion acceptance file" \
+    "acceptance review reads companion acceptance file"
 check_contains "skills/acceptance-review/SKILL.md" "PASS, FAIL, or NOT VERIFIED" \
     "acceptance review requires per-criterion status"
 check_contains "skills/acceptance-review/SKILL.md" "Information Isolation Rules" \
     "acceptance review enforces information isolation"
 check_contains "skills/acceptance-review/SKILL.md" "Rollout Acceptance" \
     "acceptance review executes rollout acceptance checks"
-check_contains "skills/acceptance-review/SKILL.md" "freshly extract both complete regions" \
-    "acceptance review requires fresh final extraction"
+check_contains "skills/acceptance-review/SKILL.md" "Acceptance Criteria Format" \
+    "acceptance review defines acceptance criteria format"
+check_contains "skills/acceptance-review/SKILL.md" "Verification Protocol" \
+    "acceptance review defines verification protocol"
+check_excludes "skills/acceptance-review/SKILL.md" "spec-sections" \
+    "acceptance review does not reference spec-sections"
+check_excludes "skills/acceptance-review/SKILL.md" "IMPLEMENTATION-SPEC-BEGIN" \
+    "acceptance review does not use region markers"
 check_order "skills/acceptance-review/reviewer-prompt.md" "## Implementation Spec" "## Acceptance Contract" \
     "reviewer loads design before acceptance"
 check_order "skills/acceptance-review/reviewer-prompt.md" "## Acceptance Contract" "## Implementation Diff" \
@@ -105,30 +107,51 @@ check_contains "skills/acceptance-review/repair-prompt.md" "[FAILED_ACCEPTANCE_C
     "repair packet contains only failed criteria"
 check_contains "skills/acceptance-review/repair-prompt.md" "[FAILURE_EVIDENCE]" \
     "repair packet contains failure evidence"
-check_contains "skills/acceptance-review/repair-prompt.md" "[REFERENCED_IMPLEMENTATION_SPEC_SECTIONS]" \
-    "repair packet contains referenced design sections"
-check_contains "skills/acceptance-review/repair-prompt.md" "[RELATED_IMPLEMENTATION_DIFF]" \
-    "repair packet contains related diff"
 
-# spec-driven-implementation: fork-unique — must reference acceptance-review and extract implementation
-check_contains "skills/spec-driven-implementation/SKILL.md" "spec-sections implementation" \
-    "lightweight spec execution extracts implementation region"
-check_contains "skills/spec-driven-implementation/SKILL.md" 'BASE_SHA=$(git rev-parse HEAD)' \
-    "lightweight execution records the pre-implementation diff base"
+# spec-driven-implementation: fork-unique — must reference acceptance-review, not spec-sections
 check_contains "skills/spec-driven-implementation/SKILL.md" "acceptance-review" \
     "lightweight execution delegates to acceptance-review skill"
+check_contains "skills/spec-driven-implementation/SKILL.md" "BASE_SHA" \
+    "lightweight execution records the pre-implementation diff base"
+check_excludes "skills/spec-driven-implementation/SKILL.md" "spec-sections" \
+    "lightweight execution does not reference spec-sections"
 
-# fast-subagent-development: fork-unique — must reference acceptance-review for strict mode
-check_contains "skills/fast-subagent-development/SKILL.md" "spec-sections implementation" \
-    "fast subagent implementation uses implementation extraction"
-check_contains "skills/fast-subagent-development/SKILL.md" "spec-sections acceptance" \
-    "fast subagent review uses acceptance only at final review"
+# fast-subagent-development: fork-unique — must reference acceptance-review, not spec-sections
 check_contains "skills/fast-subagent-development/SKILL.md" "Initial implementer subagents must not receive Acceptance content" \
     "fast subagent implementers exclude acceptance"
 check_contains "skills/fast-subagent-development/final-reviewer-prompt.md" "Acceptance region if present" \
     "fast subagent final reviewer accepts optional acceptance"
 check_contains "skills/fast-subagent-development/SKILL.md" "acceptance-review" \
     "fast subagent development references acceptance-review for strict mode"
+check_excludes "skills/fast-subagent-development/SKILL.md" "spec-sections" \
+    "fast subagent development does not reference spec-sections"
+
+# Shared skills: must NOT reference spec-sections (they are upstream original)
+check_excludes "skills/writing-plans/SKILL.md" "spec-sections" \
+    "writing-plans does not reference spec-sections"
+check_excludes "skills/executing-plans/SKILL.md" "spec-sections" \
+    "executing-plans does not reference spec-sections"
+check_excludes "skills/subagent-driven-development/SKILL.md" "spec-sections" \
+    "subagent-driven-development does not reference spec-sections"
+check_excludes "skills/requesting-code-review/SKILL.md" "spec-sections" \
+    "requesting-code-review does not reference spec-sections"
+
+# spec-sections script must not exist
+if [[ ! -f "skills/brainstorming/spec-sections" ]]; then
+    echo "  [PASS] spec-sections script removed"
+    PASSED=$((PASSED + 1))
+else
+    echo "  [FAIL] spec-sections script still exists"
+    FAILED=$((FAILED + 1))
+fi
+
+if [[ ! -f "skills/brainstorming/spec-sections.md" ]]; then
+    echo "  [PASS] spec-sections.md removed"
+    PASSED=$((PASSED + 1))
+else
+    echo "  [FAIL] spec-sections.md still exists"
+    FAILED=$((FAILED + 1))
+fi
 
 echo ""
 echo "Passed: $PASSED"

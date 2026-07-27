@@ -1,11 +1,11 @@
 ---
 name: acceptance-review
-description: "Use after implementation to independently verify work against staged Acceptance Criteria. Extracts Implementation Spec and Acceptance regions separately, dispatches a fresh reviewer, and runs a minimal repair loop for failures."
+description: "Use after implementation to independently verify work against staged Acceptance Criteria. Reads the design spec and a companion acceptance file separately, dispatches a fresh reviewer, and runs a minimal repair loop for failures."
 ---
 
 # Acceptance Review
 
-Independently verify completed work against the spec's Acceptance Criteria. This skill enforces information isolation: the reviewer sees design and acceptance separately from the implementation, and the repair agent sees only failed criteria.
+Independently verify completed work against the spec's Acceptance Criteria. This skill uses physical file separation: the design spec and acceptance criteria live in separate files, so information isolation is achieved without extraction tooling.
 
 ## When to Use
 
@@ -19,45 +19,44 @@ Use this skill after implementation is complete and you need independent accepta
 
 Do not use this skill when:
 - Implementation is not yet complete
-- There is no spec file with staged markers
+- There is no design spec file
 - You only need code quality review (use `requesting-code-review` instead)
 
 ## Prerequisites
 
-- A spec file containing `IMPLEMENTATION-SPEC-BEGIN/END` and `ACCEPTANCE-BEGIN/END` markers
-- The `spec-sections` script, located at `skills/brainstorming/spec-sections`
+- A design spec file (e.g., `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`)
+- A companion acceptance file (e.g., `docs/superpowers/specs/YYYY-MM-DD-<topic>-acceptance.md`) — **optional**
 - `BASE_SHA` recorded before implementation started
 - All implementation tasks complete and committed
 
-If the spec has no staged markers, this skill cannot run. Use `requesting-code-review` for code quality review instead.
+If no companion acceptance file exists, the reviewer can still assess code quality and requirement alignment, but cannot perform formal acceptance (no Acceptance Criteria to execute).
+
+## File Convention
+
+| File | Content |
+|------|---------|
+| `YYYY-MM-DD-<topic>-design.md` | Complete normative design: Goal, Non-Goals, Architecture, Detailed Design, Error Handling, Testing Strategy |
+| `YYYY-MM-DD-<topic>-acceptance.md` | Completion contract: Verification Protocol, Acceptance Criteria, Rollout Acceptance |
+
+The design file is the single source of truth for product behavior. The acceptance file translates those requirements into executable review cases; it MUST NOT introduce new product behavior or widen scope.
 
 ## The Process
 
-### Stage 1: Extract Review Inputs
+### Stage 1: Prepare Review Inputs
 
-Resolve `spec-sections` relative to the brainstorming skill directory. Extract to files so validation completes before any spec content is loaded:
-
-```bash
-SPEC_SECTIONS="<brainstorming-skill-directory>/spec-sections"
-LEGACY_POLICY="${SUPERPOWERS_SPEC_LEGACY_POLICY:-reject}"
-# Equivalent CLI: spec-sections implementation <spec>
-"$SPEC_SECTIONS" --legacy "$LEGACY_POLICY" implementation "$SPEC_PATH" > /tmp/review-implementation.md
-# Equivalent CLI: spec-sections acceptance <spec>
-"$SPEC_SECTIONS" --legacy "$LEGACY_POLICY" acceptance "$SPEC_PATH" > /tmp/review-acceptance.md
-```
-
-Do not read the original spec file. If either extraction fails, stop without dispatching review. Never recover by reading or sending the complete file.
-
-Then prepare the implementation evidence:
+Read the design spec and companion acceptance file directly. No extraction tooling needed — they are already separate files.
 
 ```bash
+SPEC_PATH="docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md"
+ACCEPTANCE_PATH="docs/superpowers/specs/YYYY-MM-DD-<topic>-acceptance.md"
 BASE_SHA="<recorded before implementation>"
 HEAD_SHA=$(git rev-parse HEAD)
+
 git diff "$BASE_SHA..$HEAD_SHA" > /tmp/review.diff
 <project test command> > /tmp/review-tests.txt 2>&1
 ```
 
-**If no staged spec exists:** Use the supplied plan or requirements as the Implementation Spec input and set the Acceptance Contract to `Not provided: code quality review only`. The reviewer may assess quality and requirement alignment but must not claim formal acceptance.
+If the acceptance file does not exist, set the Acceptance Contract to `Not provided: code quality review only`. The reviewer may assess quality and requirement alignment but must not claim formal acceptance.
 
 ### Stage 2: Dispatch Acceptance Reviewer
 
@@ -65,14 +64,14 @@ Dispatch a `general-purpose` subagent using the template at [reviewer-prompt.md]
 
 Populate the template in this exact order:
 
-1. **Implementation Spec** — complete extracted Implementation Spec from `/tmp/review-implementation.md`
-2. **Acceptance Contract** — complete extracted Acceptance region from `/tmp/review-acceptance.md`
+1. **Implementation Spec** — complete design spec content from `SPEC_PATH`
+2. **Acceptance Contract** — complete acceptance file content from `ACCEPTANCE_PATH`, or the no-formal-acceptance notice
 3. **Implementation Diff** — the actual diff content from `/tmp/review.diff`
 4. **Test Results** — fresh test command and output from `/tmp/review-tests.txt`
 5. **BASE_SHA** and **HEAD_SHA**
 
 The reviewer must:
-- Read the complete Implementation Spec before reading the Acceptance Contract
+- Read the complete design spec before reading the Acceptance Contract
 - Execute every Acceptance Criterion independently
 - Report PASS, FAIL, or NOT VERIFIED for each criterion with Required Evidence
 - Execute every Rollout Acceptance check with the same status and evidence rules
@@ -88,15 +87,15 @@ The repair agent receives the **minimum context** needed for the failed items:
 
 - Failed Acceptance Criteria (including failed Rollout Acceptance checks)
 - Failure evidence from the reviewer
-- Only the Implementation Spec sections referenced by the failed criteria
+- Only the design spec sections referenced by the failed criteria
 - Only the related implementation diff
 
-**Do not include:** the full Acceptance region, previously passed criteria, unrelated design sections, or unrelated diffs.
+**Do not include:** the full acceptance file, previously passed criteria, unrelated design sections, or unrelated diffs.
 
 After repair:
 1. Re-verify the failed criteria
 2. Keep previously passed criteria closed unless the repair touches their referenced design area or produces regression evidence
-3. After all targeted failures pass, **freshly extract both complete regions** and rerun every Acceptance Criterion and Rollout Acceptance check
+3. After all targeted failures pass, re-read both complete files and rerun every Acceptance Criterion and Rollout Acceptance check
 4. Continue only when all are PASS
 
 If the platform cannot provide a fresh agent/session for review or repair, stop and hand off the minimal packet. Do not collapse the stages into one context.
@@ -105,11 +104,11 @@ If the platform cannot provide a fresh agent/session for review or repair, stop 
 
 These rules are mandatory and apply across the entire workflow:
 
-- **Implementers** must never receive Acceptance content. They get only the Implementation Spec.
-- **Planners** must never receive Acceptance content. They plan from the Implementation Spec only.
-- **Acceptance reviewers** receive both regions but in a defined order: Implementation Spec first, then Acceptance Contract, then diff, then tests.
-- **Repair agents** receive only failed criteria and their referenced design sections — never the complete Acceptance region or previously passed criteria.
-- **Final acceptance** requires freshly extracting both complete regions. Do not reuse earlier extractions.
+- **Implementers** must never receive the acceptance file. They get only the design spec.
+- **Planners** must never receive the acceptance file. They plan from the design spec only.
+- **Acceptance reviewers** receive both files but in a defined order: design spec first, then acceptance file, then diff, then tests.
+- **Repair agents** receive only failed criteria and their referenced design sections — never the complete acceptance file or previously passed criteria.
+- **Final acceptance** requires re-reading both complete files. Do not reuse earlier reads.
 
 ## Completion Contract
 
@@ -120,9 +119,56 @@ Work is accepted only when **every** Acceptance Criterion and **every** Rollout 
 - A passing full test suite does not replace required source, boundary, or runtime semantic checks
 - Test success does not replace required evidence for any criterion
 
+## Acceptance Criteria Format
+
+Acceptance Criteria are executable review cases, not summaries of the requirements. They translate the spec's complete semantics into repeatable checks that cannot pass through superficial inspection.
+
+Write each criterion in the companion acceptance file in this form:
+
+```markdown
+### AC-01: <Acceptance goal>
+
+**Requirement:** <One complete, outcome-determining semantic requirement>
+
+**Verification Steps:**
+1. <Inspect a named source location, run a named test/command, or exercise a specific runtime behavior>
+
+**Pass Conditions:** <The exact observable result required for PASS>
+
+**Fail Conditions:** <Specific results, omissions, misclassification, duplication, or shortcuts that require FAIL>
+
+**Required Evidence:** <Files and line numbers, test names and output, logs, screenshots, or other concrete artifacts>
+```
+
+Rules for every criterion:
+
+- Make it atomic: one criterion verifies one semantic requirement. Split independently failing requirements into separate criteria.
+- Make it independently decidable. The verifier must not need to guess what success means.
+- Do not use `exactly`, `all`, `only`, or `as defined above` as substitutes for detail. When a referenced definition determines the result, inline the requirements that determine the result in the criterion.
+- Name the source, test, command, or runtime behavior that must be inspected and state both pass and fail outcomes.
+- Require evidence specific enough for another reviewer to reproduce the decision.
+- A field, function, test, or stage name merely existing is not sufficient evidence that its semantics are correct.
+- A passing full test suite does not replace semantic source or runtime verification.
+- Cover every implementation-significant requirement in the spec. Acceptance Criteria do not narrow or replace the detailed requirements.
+
+## Verification Protocol
+
+Include this protocol in every acceptance file:
+
+```markdown
+- Verify each Acceptance Criterion independently; do not approve from aggregate test results alone.
+- When a criterion references another spec definition, read and compare the complete definition.
+- Report PASS, FAIL, or NOT VERIFIED for every criterion.
+- A PASS must include all Required Evidence named by the criterion.
+- Missing required evidence means the criterion is NOT VERIFIED, not PASS.
+- Test success does not replace required source, boundary, or runtime semantic checks.
+- Execute Rollout Acceptance checks with the same evidence rules.
+- Only when every criterion and every Rollout Acceptance check is PASS may the task and automated loop stop.
+```
+
 ## Relationship to Other Skills
 
-- **brainstorming** — produces the staged spec with markers that this skill consumes
+- **brainstorming** — produces the design spec; optionally produces the companion acceptance file
 - **subagent-driven-development** — call this skill after its final code review completes
 - **executing-plans** — call this skill after all tasks complete
 - **spec-driven-implementation** — call this skill after implementation slices finish

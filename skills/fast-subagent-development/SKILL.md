@@ -27,21 +27,17 @@ Do not use this skill when:
 
 ## Stage Context Setup
 
-Read the plan once at the start. If the plan header references a single-file spec, extract only the Implementation Spec:
+Read the plan once at the start. If the plan references a design spec, read it directly:
 
 ```bash
-SPEC_SECTIONS="<brainstorming-skill-directory>/spec-sections"
-LEGACY_POLICY="${SUPERPOWERS_SPEC_LEGACY_POLICY:-reject}"
-# Equivalent CLI: spec-sections implementation <spec>
-"$SPEC_SECTIONS" --legacy "$LEGACY_POLICY" implementation "$SPEC_PATH" > /tmp/implementation-spec.md
 BASE_SHA=$(git rev-parse HEAD)
 ```
 
-Do not read the original spec. Do not provide Acceptance content to initial implementer subagents.
+Do not provide the companion acceptance file to initial implementer subagents.
 
 Initial implementer subagents receive:
 - Complete implementation packet text
-- Relevant extracted Implementation Spec sections
+- Relevant design spec sections
 - Relevant architectural/context notes
 - File ownership and expected test commands
 
@@ -113,16 +109,11 @@ After all implementation packets are complete, dispatch one final reviewer subag
 
 Use `./final-reviewer-prompt.md`.
 
-If the plan references a single-file spec, extract Acceptance only for final review:
-
-```bash
-# Equivalent CLI: spec-sections acceptance <spec>
-"$SPEC_SECTIONS" --legacy "$LEGACY_POLICY" acceptance "$SPEC_PATH" > /tmp/acceptance.md
-```
+If the plan references a design spec, load the design spec for the final reviewer. If a companion acceptance file exists, load it for the final reviewer as well.
 
 The final reviewer receives:
-1. Implementation Spec
-2. Acceptance region if present
+1. Design spec
+2. Companion acceptance file if present
 3. Complete implementation diff from `BASE_SHA` to `HEAD_SHA`
 4. Packet summary with commit SHAs
 5. Relevant test results
@@ -136,7 +127,7 @@ The final reviewer checks:
 - Missing or extra behavior
 - Implementation concerns raised by implementers
 
-If Acceptance content exists, the reviewer performs a lightweight Acceptance check:
+If a companion acceptance file exists, the reviewer performs a lightweight Acceptance check:
 - Report PASS, FAIL, or NOT VERIFIED for each Acceptance Criterion and Rollout Acceptance check
 - Include concrete evidence for each status
 - Do not require the full high-assurance acceptance repair loop unless the user asked for strict, PR-ready, high confidence, or full acceptance mode

@@ -57,23 +57,16 @@ ls -1 docs/superpowers/specs/*.md 2>/dev/null | sort -r | head -1
 
 1.  **Locate Spec**: Run Spec Discovery (above) to find the spec file.
 2.  **Initialize Tracker**: Create `<feature-name>.tracker.md` with the discovered spec path.
-3.  **Extract Implementation Context**: Resolve `spec-sections` relative to the brainstorming skill directory and run:
+3.  **Read Implementation Context**: Read the design spec file directly. The companion acceptance file (if present) must not enter the tracker or implementation context.
 
-```bash
-SPEC_SECTIONS="<brainstorming-skill-directory>/spec-sections"
-LEGACY_POLICY="${SUPERPOWERS_SPEC_LEGACY_POLICY:-reject}"
-# Equivalent CLI: spec-sections implementation <spec>
-"$SPEC_SECTIONS" --legacy "$LEGACY_POLICY" implementation "$SPEC_PATH" > /tmp/implementation-spec.md
-```
-
-4.  **Map the Spec**: Read `/tmp/implementation-spec.md` and extract its requirements into a checklist. Do not read the original spec file or include Acceptance content in the tracker.
+4.  **Map the Spec**: Extract the design spec's requirements into a checklist. Do not include Acceptance content in the tracker.
 5.  **Record Diff Base**: Before implementation, run `BASE_SHA=$(git rev-parse HEAD)` and record it in the tracker.
 6.  **Execute in Slices**:
     - Update tracker → `[in-progress]`.
     - TDD: failing test → code → pass.
     - Record evidence in tracker log.
     - Mark `[x] complete`.
-7.  **Independent Acceptance**: Use `superpowers:acceptance-review` to perform independent acceptance verification. It extracts Implementation Spec and Acceptance regions separately, dispatches a fresh reviewer, and runs a minimal repair loop for any failures. Do not collapse the stages into one context.
+7.  **Independent Acceptance**: Use `superpowers:acceptance-review` to perform independent acceptance verification. It reads the design spec and companion acceptance file separately, dispatches a fresh reviewer, and runs a minimal repair loop for any failures. Do not collapse the stages into one context.
 
 ## Tracker Format
 

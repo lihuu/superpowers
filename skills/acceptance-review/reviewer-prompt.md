@@ -115,8 +115,8 @@ Subagent (general-purpose):
 ```
 
 **Placeholders:**
-- `{IMPLEMENTATION_SPEC}` — complete extracted Implementation Spec from `spec-sections implementation`
-- `{ACCEPTANCE_CONTRACT}` — complete extracted Acceptance region from `spec-sections acceptance`
+- `{IMPLEMENTATION_SPEC}` — complete design spec content from the spec file
+- `{ACCEPTANCE_CONTRACT}` — complete acceptance file content, or the no-formal-acceptance notice
 - `{IMPLEMENTATION_DIFF}` — actual diff content between BASE_SHA and HEAD_SHA
 - `{TEST_RESULTS}` — fresh test command and output
 - `{BASE_SHA}` — starting commit
