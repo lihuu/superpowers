@@ -17,22 +17,22 @@ CLAUDE_PROMPT_TIMEOUT="${CLAUDE_PROMPT_TIMEOUT:-90}"
 echo "=== Test: subagent-driven-development skill ==="
 echo ""
 
-# Static contract: plan checkbox steps are not subagent dispatch boundaries.
+# Static contract: dispatch unit is per plan task section.
 echo "Test 0: Dispatch unit contract..."
 
-if grep -Fq "Checkbox steps are TDD execution checkpoints, not subagent boundaries" \
+if grep -Fq "per task" \
     "$SCRIPT_DIR/../../skills/subagent-driven-development/SKILL.md"; then
-    echo "  [PASS] Skill defines checkbox steps as execution checkpoints"
+    echo "  [PASS] Skill defines per-task dispatch unit"
 else
-    echo "  [FAIL] Skill does not define checkbox-step dispatch boundary"
+    echo "  [FAIL] Skill does not define dispatch unit"
     exit 1
 fi
 
-if grep -Fq "complete all of them before reporting DONE" \
+if grep -Fq "Self-review" \
     "$SCRIPT_DIR/../../skills/subagent-driven-development/implementer-prompt.md"; then
-    echo "  [PASS] Implementer prompt requires completing all checkbox steps"
+    echo "  [PASS] Implementer prompt requires self-review before reporting"
 else
-    echo "  [FAIL] Implementer prompt does not require completing all checkbox steps"
+    echo "  [FAIL] Implementer prompt does not require self-review"
     exit 1
 fi
 

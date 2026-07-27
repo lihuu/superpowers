@@ -87,6 +87,9 @@ check_contains "skills/fast-subagent-development/repair-prompt.md" "one repair p
 check_contains "skills/fast-subagent-development/repair-prompt.md" "Do not broaden the repair scope" \
     "repair prompt keeps repair focused"
 
+check_contains "skills/fast-subagent-development/SKILL.md" "acceptance-review" \
+    "skill references acceptance-review for strict mode"
+
 echo ""
 echo "Passed: $PASSED"
 echo "Failed: $FAILED"

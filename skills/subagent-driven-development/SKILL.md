@@ -44,24 +44,6 @@ digraph when_to_use {
 
 ## The Process
 
-### Stage Context Setup
-
-Read the plan header to obtain the single-file Spec path. Resolve `spec-sections` relative to the brainstorming skill directory, then extract only the Implementation Spec:
-
-```bash
-SPEC_SECTIONS="<brainstorming-skill-directory>/spec-sections"
-LEGACY_POLICY="${SUPERPOWERS_SPEC_LEGACY_POLICY:-reject}"
-# Equivalent CLI: spec-sections implementation <spec>
-"$SPEC_SECTIONS" --legacy "$LEGACY_POLICY" implementation "$SPEC_PATH" > /tmp/implementation-spec.md
-BASE_SHA=$(git rev-parse HEAD)
-```
-
-Read the plan and `/tmp/implementation-spec.md` once. Record `BASE_SHA` before dispatching implementation. Do not read the original spec. Initial implementer subagents receive their full task plus only the relevant extracted Implementation Spec sections. Acceptance content is not implementation context.
-
-**Dispatch unit:** A subagent task is one plan task section such as `### Task N: ...`, including all checkbox steps inside it. Checkbox steps are TDD execution checkpoints, not subagent boundaries. Do not dispatch separate subagents or separate review cycles for "write failing test", "run it", "implement", "run tests", "commit", docs, or wiring steps that belong to the same plan task.
-
-Per-task spec compliance reviews compare the task diff to the relevant Implementation Spec sections. They are not Acceptance execution and must not expose the Acceptance region to the implementer.
-
 ```dot
 digraph process {
     rankdir=TB;
@@ -513,10 +495,7 @@ Re-reviewer: Missing progress reporting — ADDRESSED (src/recovery.js:41).
 
 [After all tasks]
 [Run review-package PLAN_FILE MERGE_BASE HEAD; dispatch final code-reviewer, most capable model]
-[If the plan references a single-file spec, extract complete Implementation Spec and Acceptance regions separately and dispatch independent acceptance reviewer with Design → Acceptance → Diff → Tests]
 Final reviewer: All requirements met. Deferred minors triaged: none block merge.
-Acceptance reviewer (if applicable): AC-01..AC-08 PASS with required evidence
-[Delete this plan's workspace — the record now lives in git]
 
 [Delete this plan's workspace — the record now lives in git]
 

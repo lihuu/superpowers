@@ -143,6 +143,12 @@ If Acceptance content exists, the reviewer performs a lightweight Acceptance che
 
 If the user explicitly says the main agent should review without a reviewer subagent, the controller may perform the final review itself.
 
+## Independent Acceptance (Optional)
+
+If the user asked for strict, PR-ready, high confidence, or full acceptance mode, invoke `superpowers:acceptance-review` after the final review completes. It performs the full high-assurance acceptance repair loop: separate extraction, independent reviewer, minimal repair packets, and a fresh full re-verification.
+
+Do not invoke `acceptance-review` for the default fast path — the final reviewer's lightweight Acceptance check is sufficient.
+
 ## Repair Loop
 
 If final review finds issues, dispatch repair work.

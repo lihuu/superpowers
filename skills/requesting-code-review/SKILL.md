@@ -23,51 +23,27 @@ Dispatch a code reviewer subagent to catch issues before they cascade. The revie
 
 ## How to Request
 
-**1. Prepare staged requirements when a Spec exists:**
-
-Resolve `spec-sections` relative to the brainstorming skill directory. Extract to files so validation completes before any spec content is loaded:
-
-```bash
-SPEC_SECTIONS="<brainstorming-skill-directory>/spec-sections"
-LEGACY_POLICY="${SUPERPOWERS_SPEC_LEGACY_POLICY:-reject}"
-"$SPEC_SECTIONS" --legacy "$LEGACY_POLICY" implementation "$SPEC_PATH" > /tmp/review-implementation.md
-# Equivalent CLI: spec-sections acceptance <spec>
-"$SPEC_SECTIONS" --legacy "$LEGACY_POLICY" acceptance "$SPEC_PATH" > /tmp/review-acceptance.md
-```
-
-Do not read the original spec file. If either extraction fails, stop without dispatching review.
-
-If no Spec exists, use the supplied plan/requirements as the Implementation Spec input and set the Acceptance Contract to `Not provided: code quality review only`. The reviewer may assess quality and requirement alignment but must not claim formal acceptance.
-
-**2. Get git SHAs, diff, and fresh test results:**
+**1. Get git SHAs:**
 ```bash
 BASE_SHA=$(git rev-parse HEAD~1)  # or origin/main
 HEAD_SHA=$(git rev-parse HEAD)
-git diff "$BASE_SHA..$HEAD_SHA" > /tmp/review.diff
-<project test command> > /tmp/review-tests.txt 2>&1
 ```
 
-**3. Dispatch code reviewer subagent:**
+**2. Dispatch code reviewer subagent:**
 
 Dispatch a `general-purpose` subagent, filling the template at [code-reviewer.md](code-reviewer.md)
 
 **Placeholders:**
 - `{DESCRIPTION}` - Brief summary of what you built
-- `{IMPLEMENTATION_SPEC}` - Complete extracted Implementation Spec, or explicit plan/requirements when no Spec exists
-- `{ACCEPTANCE_CONTRACT}` - Complete extracted Acceptance region, or the no-formal-acceptance notice
-- `{IMPLEMENTATION_DIFF}` - Actual diff content
-- `{TEST_RESULTS}` - Fresh test command and output
+- `{PLAN_OR_REQUIREMENTS}` - What it should do
 - `{BASE_SHA}` - Starting commit
 - `{HEAD_SHA}` - Ending commit
 
-Populate the template in its defined order: Implementation Spec, Acceptance Contract, Implementation Diff, Test Results.
-
-**4. Act on feedback:**
+**3. Act on feedback:**
 - Fix Critical issues immediately
 - Fix Important issues before proceeding
 - Note Minor issues for later
 - Push back if reviewer is wrong (with reasoning)
-- For failed Acceptance Criteria, use the minimal repair packet from subagent-driven-development/repair-prompt.md rather than sending the whole Acceptance region to the repair agent
 
 ## Example
 
@@ -81,10 +57,7 @@ HEAD_SHA=$(git rev-parse HEAD)
 
 [Dispatch code reviewer subagent]
   DESCRIPTION: Added verifyIndex() and repairIndex() with 4 issue types
-  IMPLEMENTATION_SPEC: Extracted design requirements for Task 2
-  ACCEPTANCE_CONTRACT: Extracted completion contract
-  IMPLEMENTATION_DIFF: git diff a7981ec..3df7661
-  TEST_RESULTS: pytest -q (18 passed)
+  PLAN_OR_REQUIREMENTS: Task 2 from docs/superpowers/plans/deployment-plan.md
   BASE_SHA: a7981ec
   HEAD_SHA: 3df7661
 

@@ -110,20 +110,6 @@ FOR multi-item feedback:
   4. Verify no regressions
 ```
 
-## Acceptance Failure Repair
-
-When feedback is an Acceptance result, do not hand the repair agent the complete Spec or complete Acceptance region.
-
-1. Keep only criteria reported as FAIL or NOT VERIFIED.
-2. Include each criterion's failure evidence.
-3. Extract only the Implementation Spec sections explicitly referenced by those criteria.
-4. Include only the related implementation diff.
-5. Implement and re-verify those failed criteria.
-6. Keep previously passed criteria closed unless the repair touches their referenced design area or produces regression evidence.
-7. After all targeted failures pass, run a fresh final acceptance with both complete regions and every criterion.
-
-Use `subagent-driven-development/repair-prompt.md` for the repair packet. A partial repair pass is not final completion.
-
 ## When To Push Back
 
 Push back when:

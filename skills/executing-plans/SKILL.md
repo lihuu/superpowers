@@ -30,29 +30,7 @@ For each task:
 3. Run verifications as specified
 4. Mark as completed
 
-### Step 3: Independent Acceptance
-
-After implementation tasks and their tests finish, do not complete the branch yet.
-
-1. Extract fresh review inputs:
-
-```bash
-# Equivalent CLIs:
-# spec-sections implementation <spec>
-# spec-sections acceptance <spec>
-"$SPEC_SECTIONS" --legacy "$LEGACY_POLICY" implementation "$SPEC_PATH" > /tmp/review-implementation.md
-"$SPEC_SECTIONS" --legacy "$LEGACY_POLICY" acceptance "$SPEC_PATH" > /tmp/review-acceptance.md
-git diff "$BASE_SHA..HEAD" > /tmp/review.diff
-<project test command> > /tmp/review-tests.txt 2>&1
-```
-
-2. Use requesting-code-review with a fresh reviewer. Load complete Implementation Spec, complete Acceptance, diff, then tests in that order.
-3. Require PASS, FAIL, or NOT VERIFIED with required evidence for every criterion and Rollout Acceptance check.
-4. For failures, create a fresh repair context containing only failed criteria, failure evidence, referenced Implementation Spec sections, and related diff. If the platform cannot provide a fresh agent/session, stop and hand off this minimal packet; do not repair in the acceptance reviewer's full context.
-5. Re-verify failed criteria. Keep passed criteria closed unless affected by the repair.
-6. After targeted failures pass, freshly extract both complete regions and rerun every Acceptance Criterion and Rollout Acceptance check. Continue only when all are PASS.
-
-### Step 4: Complete Development
+### Step 3: Complete Development
 
 After all tasks complete and verified:
 - Announce: "I'm using the finishing-a-development-branch skill to complete this work."
@@ -81,7 +59,6 @@ After all tasks complete and verified:
 - Review plan critically first
 - Follow plan steps exactly
 - Don't skip verifications
-- Do not replace independent acceptance with task tests
 - Reference skills when plan says to
 - Stop when blocked, don't guess
 - Never start implementation on main/master branch without explicit user consent

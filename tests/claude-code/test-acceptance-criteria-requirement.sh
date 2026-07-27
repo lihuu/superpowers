@@ -104,14 +104,14 @@ check_file \
     "spec reviewer checks the verification protocol"
 
 check_file \
-    "skills/requesting-code-review/code-reviewer.md" \
+    "skills/acceptance-review/reviewer-prompt.md" \
     "verification steps, pass conditions, fail conditions, and required evidence" \
     "acceptance review preserves each criterion's verification contract"
 
 check_file \
-    "skills/writing-plans/SKILL.md" \
-    "Acceptance content MUST NOT enter the planning agent's context" \
-    "writing-plans excludes acceptance from implementation planning"
+    "skills/acceptance-review/SKILL.md" \
+    "Acceptance content" \
+    "acceptance-review addresses acceptance content isolation"
 
 if [ "$FAILED" -eq 0 ]; then
     echo "STATUS: PASSED"

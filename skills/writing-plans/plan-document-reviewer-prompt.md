@@ -13,13 +13,7 @@ Subagent (general-purpose):
     You are a plan document reviewer. Verify this plan is complete and ready for implementation.
 
     **Plan to review:** [PLAN_FILE_PATH]
-
-    ## Extracted Implementation Spec
-
-    [IMPLEMENTATION_SPEC_CONTENT]
-
-    This is the only spec content available during planning. Do not read the
-    original spec file or request Acceptance Criteria.
+    **Spec for reference:** [SPEC_FILE_PATH]
 
     ## What to Check
 

@@ -73,14 +73,7 @@ LEGACY_POLICY="${SUPERPOWERS_SPEC_LEGACY_POLICY:-reject}"
     - TDD: failing test → code → pass.
     - Record evidence in tracker log.
     - Mark `[x] complete`.
-7.  **Independent Acceptance**:
-    - After implementation, run `spec-sections implementation "$SPEC_PATH"` and `spec-sections acceptance "$SPEC_PATH"` into separate review files.
-    - Give a fresh reviewer complete Implementation Spec, complete Acceptance, related diff, then test results in that order.
-    - Require PASS, FAIL, or NOT VERIFIED with evidence for every criterion and Rollout Acceptance check.
-    - Repair through a fresh minimal context containing only failed criteria, failure evidence, referenced Implementation Spec sections, and related diff.
-    - Re-verify failures while keeping passed criteria closed unless affected.
-    - Freshly extract both complete regions and rerun every Acceptance Criterion and Rollout Acceptance check before final sign-off.
-    - If no fresh agent/session is available for review or repair, stop and hand off the corresponding packet rather than collapsing the stages into one context.
+7.  **Independent Acceptance**: Use `superpowers:acceptance-review` to perform independent acceptance verification. It extracts Implementation Spec and Acceptance regions separately, dispatches a fresh reviewer, and runs a minimal repair loop for any failures. Do not collapse the stages into one context.
 
 ## Tracker Format
 
@@ -107,4 +100,5 @@ LEGACY_POLICY="${SUPERPOWERS_SPEC_LEGACY_POLICY:-reject}"
 
 - **REQUIRED:** Use `test-driven-development` for all code changes.
 - **REQUIRED:** Use `verification-before-completion` for final sign-off.
+- **REQUIRED:** Use `acceptance-review` for independent acceptance verification after implementation.
 - Use `writing-plans` if the tracker grows beyond 10 items or reveals hidden complexity.
