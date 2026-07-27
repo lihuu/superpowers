@@ -1,5 +1,11 @@
 # Fast Subagent Development Implementation Plan
 
+> ⚠️ **历史文档 — 描述 fast-subagent-development 的原始设计（基于 spec-sections 提取流程）**
+>
+> 当前实现已改为 **companion file 物理分离** 方式：design spec 与 companion acceptance file 各一个独立文件，不再用 `spec-sections` 脚本提取 region（a35f092 删除该脚本）。本文中的 `spec-sections` / `IMPLEMENTATION_SPEC_SECTIONS` / `ACCEPTANCE_CRITERIA_OR_NONE` 引用仅作历史参考，不代表当前实现。
+>
+> 当前实现见 `skills/fast-subagent-development/SKILL.md`（commit 09e30a3 及后续）。本文件保留作为该 skill 的创建历史记录，不再作为实现规范。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add a new `fast-subagent-development` workflow skill that uses implementer-only packets plus a final reviewer subagent for lower-overhead plan execution.

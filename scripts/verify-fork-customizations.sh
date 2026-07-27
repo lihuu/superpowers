@@ -39,51 +39,29 @@ for s in fast-subagent-development handoff spec-driven-implementation takeover; 
   fi
 done
 
-# --- 2. spec-sections：存在 + 可执行 + 接口完整（4 个 skill 的共同依赖） ---
-log "spec-sections 核心依赖"
-SS="$REPO_ROOT/skills/brainstorming/spec-sections"
-if [ ! -f "$SS" ]; then
-  bad "skills/brainstorming/spec-sections 丢失 — 4 个自定义 skill 都会断"
-  FAIL=1
+# --- 2. spec-sections 已废弃（a35f092 改用 companion file 分离） ---
+# 历史：4 个自定义 skill 曾共用 skills/brainstorming/spec-sections 脚本做
+# Implementation Spec / Acceptance region 提取。a35f092 删除该脚本，改用
+# 物理文件分离（design spec 一个文件、companion acceptance file 另一个文件），
+# 信息隔离靠独立文件而非脚本切区。此处仅留注释说明，不再断言脚本存在。
+log "spec-sections（已废弃）"
+if [ -f "$REPO_ROOT/skills/brainstorming/spec-sections" ]; then
+  warn "skills/brainstorming/spec-sections 仍存在 — a35f092 应已删除，请确认是否遗留"
 else
-  if [ -x "$SS" ]; then ok "可执行"; else bad "不可执行 (chmod +x)"; FAIL=1; fi
-  # 接口：必须支持 implementation/acceptance 子命令 + --legacy
-  if grep -q '"implementation"' "$SS" && grep -q '"acceptance"' "$SS"; then
-    ok "子命令 implementation/acceptance"
-  else
-    bad "缺少 implementation/acceptance 子命令"
-    FAIL=1
-  fi
-  if grep -q -- '--legacy' "$SS"; then
-    ok "--legacy 参数"
-  else
-    bad "缺少 --legacy 参数"
-    FAIL=1
-  fi
+  ok "spec-sections 脚本已删除（companion file 分离方式生效）"
 fi
 
-# spec-sections.md 参考文档
-if [ -f "$REPO_ROOT/skills/brainstorming/spec-sections.md" ]; then
-  ok "spec-sections.md"
-else
-  bad "spec-sections.md 丢失"; FAIL=1
-fi
-
-# 功能冒烟（软检查：python3 在 PATH 时实际跑一下 --help）
-if [ -x "$SS" ] && command -v python3 >/dev/null 2>&1; then
-  if python3 "$SS" --help >/dev/null 2>&1; then
-    ok "运行正常 (--help 通过)"
-  else
-    warn "--help 运行异常（可能 python3 环境问题，非致命）"
-  fi
-fi
-
-# --- 3. brainstorming 集成仍在（引用 spec-sections） ---
-log "共享 skill 的 spec-sections 集成"
+# --- 3. brainstorming 不再引用 spec-sections（a35f092 后） ---
+log "共享 skill 不再依赖 spec-sections"
 BS="$REPO_ROOT/skills/brainstorming/SKILL.md"
 if [ -f "$BS" ]; then
-  n=$(grep -c 'spec-sections' "$BS" 2>/dev/null || echo 0)
-  if [ "$n" -gt 0 ]; then ok "brainstorming 引用 spec-sections ($n 处)"; else bad "brainstorming 不再引用 spec-sections"; FAIL=1; fi
+  n=$(grep -c 'spec-sections' "$BS" 2>/dev/null)
+  n=${n:-0}
+  if [ "$n" -eq 0 ]; then
+    ok "brainstorming 不引用 spec-sections（与 companion file 方式一致）"
+  else
+    warn "brainstorming 仍引用 spec-sections ($n 处) — a35f092 后应为 0，请确认是否遗留"
+  fi
 else
   bad "brainstorming/SKILL.md 丢失"; FAIL=1
 fi

@@ -61,28 +61,28 @@ check_contains "skills/fast-subagent-development/SKILL.md" "Checkbox steps are T
     "checkbox steps are not dispatch boundaries"
 check_contains "skills/fast-subagent-development/SKILL.md" "one final reviewer subagent by default" \
     "final review defaults to reviewer subagent"
-check_contains "skills/fast-subagent-development/SKILL.md" "Initial implementer subagents must not receive Acceptance content" \
+check_contains "skills/fast-subagent-development/SKILL.md" "Do not provide the companion acceptance file to initial implementer" \
     "acceptance excluded from implementers"
 check_contains "skills/fast-subagent-development/SKILL.md" 'Use `subagent-driven-development` instead' \
     "high-assurance workflow boundary is explicit"
 
-check_contains "skills/fast-subagent-development/implementer-prompt.md" "exactly one implementation packet" \
+check_contains "skills/fast-subagent-development/implementer-prompt.md" "one implementation packet" \
     "implementer receives one packet"
-check_contains "skills/fast-subagent-development/implementer-prompt.md" "complete every checkbox step inside the packet" \
+check_contains "skills/fast-subagent-development/implementer-prompt.md" "Checkbox steps inside the packet" \
     "implementer completes all packet steps"
-check_contains "skills/fast-subagent-development/implementer-prompt.md" "Do not create one commit per checkbox microstep" \
+check_contains "skills/fast-subagent-development/implementer-prompt.md" "not one commit per checkbox microstep" \
     "implementer avoids microstep commits"
 check_contains "skills/fast-subagent-development/implementer-prompt.md" "commit SHA" \
     "implementer reports commit SHA"
 
-check_contains "skills/fast-subagent-development/final-reviewer-prompt.md" "Implementation Spec" \
+check_contains "skills/fast-subagent-development/final-reviewer-prompt.md" "Design Spec" \
     "reviewer receives implementation spec"
-check_contains "skills/fast-subagent-development/final-reviewer-prompt.md" "Acceptance region if present" \
+check_contains "skills/fast-subagent-development/final-reviewer-prompt.md" "Acceptance File (If Present)" \
     "reviewer receives optional acceptance"
 check_contains "skills/fast-subagent-development/final-reviewer-prompt.md" "PASS, FAIL, or NOT VERIFIED" \
     "reviewer reports acceptance statuses"
 
-check_contains "skills/fast-subagent-development/repair-prompt.md" "one repair packet" \
+check_contains "skills/fast-subagent-development/repair-prompt.md" "repairing review findings in one packet" \
     "repair prompt uses focused repair packet"
 check_contains "skills/fast-subagent-development/repair-prompt.md" "Do not broaden the repair scope" \
     "repair prompt keeps repair focused"

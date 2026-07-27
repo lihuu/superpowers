@@ -30,24 +30,27 @@ frontmatter 都健全（`name` + `description`），Claude Code 从 `skills/` �
 
 | 脚本 | 作用 |
 |---|---|
-| `skills/brainstorming/spec-sections` | Python 可执行，校验/提取 spec 双区（`validate`/`implementation`/`acceptance`/`full` + `--legacy`） |
-| `skills/brainstorming/spec-sections.md` | 上述脚本的命令参考文档 |
+| ~~`skills/brainstorming/spec-sections`~~ | **已删除（a35f092）**：原 Python 脚本做 spec 双区提取，被 companion file 物理分离替代（design spec 与 acceptance 各一个文件） |
+| ~~`skills/brainstorming/spec-sections.md`~~ | **已删除（a35f092）**：上述脚本的命令参考文档 |
 | `skills/finishing-a-development-branch/archive-docs.sh` | 合并/PR 后把 spec/plan 文档移到 `archive/` 子目录 |
 | `skills/handoff/scripts/gather-state.sh` | 收集 git 状态供 handoff 使用 |
+| `skills/fast-subagent-development/scripts/` | sdd-workspace / packet-brief / review-package（09e30a3 起自带，不跨 skill 引用） |
 
 ### 2.3 对共享 skill 的修改（**高冲突风险，重点核对**）
 
 | skill | 你的改动 | 合并后状态 |
 |---|---|---|
-| `brainstorming` | **spec-sections 双区 spec 体系**：强制 `IMPLEMENTATION-SPEC`/`ACCEPTANCE` 标记分区、机械校验、Acceptance Criteria 格式、Verification Protocol、Self-Review 4→9 条；改造 `spec-document-reviewer-prompt.md` 输入为提取后内容 | ✅ 完整保留 |
-| `writing-plans` | "Stage Input: Implementation Only" 段（只读提取的 Implementation 区）+ Self-Review 加 Context isolation + plan 模板 2 字段 | ⚠️ 核心保留；模板 2 字段（Spec/Spec Input Mode）被 upstream 的 Global Constraints 替代 |
+| `brainstorming` | ~~spec-sections 双区 spec 体系~~（a35f092 已移除，改用 companion file 分离）；保留 Acceptance Criteria 格式、Verification Protocol、Self-Review 4→9 条 | ✅ companion file 方式保留 |
+| `writing-plans` | "Stage Input: Implementation Only" 段（~~只读提取的 Implementation 区~~，现读 design spec 文件）+ Self-Review 加 Context isolation + plan 模板 2 字段 | ⚠️ 核心保留；模板 2 字段（Spec/Spec Input Mode）被 upstream 的 Global Constraints 替代 |
 | `finishing-a-development-branch` | 新增 Step 7 归档步骤（`archive-docs.sh`） | ✅ 完整保留 |
-| `subagent-driven-development` | "Stage Context Setup"（spec-sections 集成）+ 原 "Independent Acceptance and Repair Loop" | ⚠️ Stage Context Setup 保留；**acceptance/repair loop 被 upstream v6 的 task-reviewer 重构覆盖删除** |
-| `executing-plans` / `requesting-code-review` / `receiving-code-review` | spec-sections 集成相关小改 | ✅ 保留 |
+| `subagent-driven-development` | "Stage Context Setup"（~~spec-sections 集成~~，现 file-handoff）+ 原 "Independent Acceptance and Repair Loop" | ⚠️ Stage Context Setup 保留；**acceptance/repair loop 被 upstream v6 的 task-reviewer 重构覆盖删除** |
+| `executing-plans` / `requesting-code-review` / `receiving-code-review` | ~~spec-sections 集成相关小改~~（a35f092 后相关引用已移除） | ✅ 保留 |
 
 ### 2.4 新增测试（11 个）
 
-`tests/claude-code/test-{acceptance-criteria-requirement,document-auto-archive,fast-subagent-development,spec-sections,staged-spec-workflow,subagent-driven-development}.sh`、`tests/handoff/*`、`tests/takeover/*`、`tests/skill-triggering/prompts/takeover.txt`
+`tests/claude-code/test-{acceptance-criteria-requirement,document-auto-archive,fast-subagent-development,staged-spec-workflow,subagent-driven-development}.sh`、`tests/handoff/*`、`tests/takeover/*`、`tests/skill-triggering/prompts/takeover.txt`
+
+> 注：`tests/claude-code/test-spec-sections.sh` 随 a35f092 删除 spec-sections 脚本一并移除；`test-staged-spec-workflow.sh` 已接手断言"各 skill 不引用 spec-sections"。
 
 ### 2.5 .gitignore
 
@@ -60,17 +63,19 @@ frontmatter 都健全（`name` + `description`），Claude Code 从 `skills/` �
 ## 3. 依赖图（核对一致性）
 
 ```
-brainstorming/spec-sections  ← 核心，upstream 未触碰
+companion file 分离（a35f092 起，替代原 spec-sections 提取）
+   design spec 文件 (YYYY-MM-DD-<topic>-design.md)
+   companion acceptance 文件 (YYYY-MM-DD-<topic>-acceptance.md)
    ↑
-   ├── writing-plans              (Stage Input 段调用 spec-sections implementation)
-   ├── spec-driven-implementation (Independent Acceptance 调用 spec-sections)
-   ├── fast-subagent-development  (Stage Context Setup 调用 spec-sections)
-   └── subagent-driven-development(Stage Context Setup 调用 spec-sections)
+   ├── writing-plans              (Stage Input 段读 design spec 文件)
+   ├── spec-driven-implementation (Independent Acceptance 读 companion acceptance 文件)
+   ├── fast-subagent-development  (final reviewer 读两个文件；implementer 不收 acceptance)
+   └── subagent-driven-development(Stage Context Setup file-handoff)
 
 handoff  ↔  takeover              (handoff 产出文件，takeover 消费；gather-state.sh 共用)
 ```
 
-**核对要点**：合并后确认 `skills/brainstorming/spec-sections` 仍在且可执行（`#!/usr/bin/env python3`），且支持 `implementation`/`acceptance`/`--legacy`。这是上面 4 个 skill 的共同依赖，断了就全断。
+**核对要点**：a35f092 已删除 `skills/brainstorming/spec-sections` 脚本。合并后确认该脚本**不存在**（存在则为遗留），且上述 4 个 skill 引用的是 design spec / companion acceptance 文件路径而非 spec-sections 提取产物。`tests/claude-code/test-staged-spec-workflow.sh` 已断言各 skill 不引用 spec-sections。
 
 ---
 
@@ -85,15 +90,15 @@ git merge upstream/main
 
 # 3. 解决冲突（原则见下）
 # 4. 用本文件第 2 节清单逐一核对存活
-# 5. 跑测试确认 spec-sections 链路正常
-bash skills/brainstorming/spec-sections validate <某个带标记的 spec>
+# 5. 跑测试确认 companion file 分离链路正常
+bash tests/claude-code/test-staged-spec-workflow.sh
 ```
 
 ### 冲突解决原则
 
 - **你的独立 skill 目录**（2.1）：整目录保留，upstream 不会动
-- **共享 skill 的冲突**（2.3）：优先保留你的 spec-sections 集成段；upstream 的新功能择优合并到不冲突的位置
-- **被 upstream 删除的文件**：接受删除（upstream 的设计演进，不是误删）。历史案例：`code-quality-reviewer-prompt.md`、`spec-reviewer-prompt.md`（被 `task-reviewer-prompt.md` 替代）、`test-document-review-system.sh`、`run-all.sh`、`run-test.sh`
+- **共享 skill 的冲突**（2.3）：优先保留你的 companion file 集成段（a35f092 后）；upstream 的新功能择优合并到不冲突的位置
+- **被 upstream 删除的文件**：接受删除（upstream 的设计演进，不是误删）。历史案例：`code-quality-reviewer-prompt.md`、`spec-reviewer-prompt.md`（被 `task-reviewer-prompt.md` 替代）、`test-document-review-system.sh`、`run-all.sh`、`run-test.sh`、`skills/brainstorming/spec-sections`（a35f092 改 companion file 分离）
 
 ---
 
@@ -102,7 +107,7 @@ bash skills/brainstorming/spec-sections validate <某个带标记的 spec>
 | 冲突点 | upstream 做了什么 | 你的应对 |
 |---|---|---|
 | `subagent-driven-development` | 两阶段 review（spec-reviewer + code-quality-reviewer）合并成单 `task-reviewer-prompt.md` | 接受 task-reviewer；你的 acceptance/repair loop 已丢，如需要可基于 task-reviewer 重新设计 |
-| `brainstorming` / `writing-plans` | upstream 也在演进（加 Global Constraints、Task Right-Sizing 等） | 你的 spec-sections 集成段手动重新合并到 upstream 新版上 |
+| `brainstorming` / `writing-plans` | upstream 也在演进（加 Global Constraints、Task Right-Sizing 等） | 你的 companion file 集成段（a35f092 后）手动重新合并到 upstream 新版上 |
 | 旧 reviewer prompt + 旧 bash 测试 | upstream 用 evals drill 替代 | 接受删除 |
 
 ---
@@ -158,12 +163,15 @@ echo "=== 4 个自定义 skill ==="
 for s in fast-subagent-development handoff spec-driven-implementation takeover; do
   test -f skills/$s/SKILL.md && echo "✅ $s" || echo "❌ $s 丢失"
 done
-echo "=== spec-sections 可执行 + 接口 ==="
-test -x skills/brainstorming/spec-sections && echo "✅ 可执行" || echo "❌ 不可执行/丢失"
-echo "=== brainstorming 集成仍在 ==="
-grep -c "spec-sections" skills/brainstorming/SKILL.md
+echo "=== spec-sections 已删除（a35f092） ==="
+test ! -e skills/brainstorming/spec-sections && echo "✅ 已删除" || echo "❌ 仍存在（遗留）"
+echo "=== brainstorming 不再引用 spec-sections ==="
+n=$(grep -c "spec-sections" skills/brainstorming/SKILL.md 2>/dev/null || echo 0)
+[ "$n" -eq 0 ] && echo "✅ 无引用" || echo "⚠️ 仍有 $n 处引用"
 echo "=== 归档脚本仍在 ==="
 test -f skills/finishing-a-development-branch/archive-docs.sh && echo "✅" || echo "❌"
+echo "=== fast-subagent-development 自带 scripts ==="
+test -x skills/fast-subagent-development/scripts/sdd-workspace && echo "✅ sdd-workspace" || echo "❌"
 echo "=== 无残留冲突标记 ==="
 grep -rl '^<<<<<<< \|^>>>>>>> ' skills/ 2>/dev/null || echo "✅ 无冲突标记"
 ```

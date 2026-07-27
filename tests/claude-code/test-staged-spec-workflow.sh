@@ -117,9 +117,9 @@ check_excludes "skills/spec-driven-implementation/SKILL.md" "spec-sections" \
     "lightweight execution does not reference spec-sections"
 
 # fast-subagent-development: fork-unique — must reference acceptance-review, not spec-sections
-check_contains "skills/fast-subagent-development/SKILL.md" "Initial implementer subagents must not receive Acceptance content" \
+check_contains "skills/fast-subagent-development/SKILL.md" "Do not provide the companion acceptance file to initial implementer" \
     "fast subagent implementers exclude acceptance"
-check_contains "skills/fast-subagent-development/final-reviewer-prompt.md" "Acceptance region if present" \
+check_contains "skills/fast-subagent-development/final-reviewer-prompt.md" "Companion Acceptance File" \
     "fast subagent final reviewer accepts optional acceptance"
 check_contains "skills/fast-subagent-development/SKILL.md" "acceptance-review" \
     "fast subagent development references acceptance-review for strict mode"
