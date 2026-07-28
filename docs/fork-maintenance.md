@@ -41,7 +41,7 @@ frontmatter 都健全（`name` + `description`），Claude Code 从 `skills/` �
 | skill | 你的改动 | 合并后状态 |
 |---|---|---|
 | `brainstorming` | ~~spec-sections 双区 spec 体系~~（a35f092 已移除，改用 companion file 分离）；保留 Acceptance Criteria 格式、Verification Protocol、Self-Review 4→9 条 | ✅ companion file 方式保留 |
-| `writing-plans` | "Stage Input: Implementation Only" 段（~~只读提取的 Implementation 区~~，现读 design spec 文件）+ Self-Review 加 Context isolation + plan 模板 2 字段 | ⚠️ 核心保留；模板 2 字段（Spec/Spec Input Mode）被 upstream 的 Global Constraints 替代 |
+| `writing-plans` | ~~"Stage Input: Implementation Only" 段 + Self-Review Context isolation + plan 模板 2 字段~~ **7b53d3c 已整体还原成 upstream 原版（zero diff）**，fork spec-sections 集成段被有意移除（acceptance 机制移到独立 acceptance-review skill） | ✅ upstream 原版，无 fork 定制 |
 | `finishing-a-development-branch` | 新增 Step 7 归档步骤（`archive-docs.sh`） | ✅ 完整保留 |
 | `subagent-driven-development` | "Stage Context Setup"（~~spec-sections 集成~~，现 file-handoff）+ 原 "Independent Acceptance and Repair Loop" | ⚠️ Stage Context Setup 保留；**acceptance/repair loop 被 upstream v6 的 task-reviewer 重构覆盖删除** |
 | `executing-plans` / `requesting-code-review` / `receiving-code-review` | ~~spec-sections 集成相关小改~~（a35f092 后相关引用已移除） | ✅ 保留 |
@@ -67,7 +67,7 @@ companion file 分离（a35f092 起，替代原 spec-sections 提取）
    design spec 文件 (YYYY-MM-DD-<topic>-design.md)
    companion acceptance 文件 (YYYY-MM-DD-<topic>-acceptance.md)
    ↑
-   ├── writing-plans              (Stage Input 段读 design spec 文件)
+   ├── writing-plans              (7b53d3c 后：upstream 原版，无 fork 集成)
    ├── spec-driven-implementation (Independent Acceptance 读 companion acceptance 文件)
    ├── fast-subagent-development  (final reviewer 读两个文件；implementer 不收 acceptance)
    └── subagent-driven-development(Stage Context Setup file-handoff)

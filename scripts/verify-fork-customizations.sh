@@ -68,8 +68,20 @@ fi
 
 # --- 4. 其他共享 skill 的关键集成段 ---
 log "其他共享 skill 集成段"
+# writing-plans: 7b53d3c 把它还原成 upstream 原版（zero diff），fork 的
+# spec-sections "Stage Input: Implementation Only" 段被有意移除（acceptance
+# 机制移到独立 acceptance-review skill）。断言它不含 fork spec-sections
+# 遗留，而非断言该段存在。
 WP="$REPO_ROOT/skills/writing-plans/SKILL.md"
-if [ -f "$WP" ] && grep -q 'Stage Input: Implementation Only' "$WP"; then ok "writing-plans: Stage Input 段"; else bad "writing-plans: Stage Input 段丢失"; FAIL=1; fi
+if [ -f "$WP" ]; then
+  if grep -qiE 'spec-sections|Stage Input: Implementation Only|IMPLEMENTATION-SPEC' "$WP"; then
+    warn "writing-plans 仍含 spec-sections 遗留 — 7b53d3c 后应为 upstream 原版"
+  else
+    ok "writing-plans: upstream 原版（无 spec-sections 遗留）"
+  fi
+else
+  bad "writing-plans/SKILL.md 丢失"; FAIL=1
+fi
 
 FB="$REPO_ROOT/skills/finishing-a-development-branch/SKILL.md"
 if [ -f "$FB" ] && grep -qi 'Archive Documentation' "$FB"; then ok "finishing-a-development-branch: Step 7 归档段"; else bad "finishing-a-development-branch: 归档段丢失"; FAIL=1; fi
