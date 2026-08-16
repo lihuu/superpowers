@@ -13,3 +13,9 @@ triage/
 # plugin, so the whole directory is ignored here.
 evals/
 .antigravitycli/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
