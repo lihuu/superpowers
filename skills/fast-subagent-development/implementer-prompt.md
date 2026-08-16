@@ -53,6 +53,18 @@ Subagent (general-purpose):
     While iterating, run the focused test for what you're changing; run the
     full suite once before committing, not after every edit.
 
+    ## You Do Not Dispatch Subagents
+
+    Do all of this packet's work yourself. Never spawn a subagent to
+    implement part of the packet, and above all never spawn a reviewer to
+    check your work. Self-review (below) means reading your own diff.
+    Review is the controller's job: after you report, it runs a final
+    review against the whole branch. A reviewer you spawn duplicates
+    that review at full cost, and its approval counts for nothing in
+    the process. If you catch yourself thinking "an independent review
+    would strengthen my report" — that review is already scheduled.
+    Report instead.
+
     ## Code Organization
 
     You reason best about code you can hold in context at once, and your edits are more
@@ -114,17 +126,20 @@ Subagent (general-purpose):
 
     In fast-subagent-development the final review happens once, after all
     packets are complete — there is no per-packet review. Once you report
-    DONE, your work on this packet is finished; the controller will not
-    resume you.
+    DONE, your work on this packet is finished for now.
 
     If the final review later finds issues in your packet, the controller
-    dispatches a **fresh repair subagent** (not you) using the repair
-    prompt. That repair subagent reads your packet brief and your report
-    file, fixes the findings, re-runs the covering tests, and **appends its
-    fix report to the same report file** you wrote. Your report is the
-    persistent memory the repair subagent starts from — that is why the
-    report format below asks for TDD evidence and covering-test output, not
-    just a summary.
+    may **resume you** with the findings — your context is intact and you
+    know the code you wrote, so you can fix faster than a fresh subagent
+    rebuilding from the report file. If the harness cannot resume you, or
+    if a first repair attempt did not converge, the controller dispatches a
+    **fresh repair subagent** (not you) using the repair prompt. That
+    repair subagent reads your packet brief and your report file, fixes
+    the findings, re-runs the covering tests, and **appends its fix report
+    to the same report file** you wrote. Your report is the persistent
+    memory the repair subagent starts from — that is why the report format
+    below asks for TDD evidence and covering-test output, not just a
+    summary.
 
     This does not change what you do now: implement, test, self-review,
     write a complete report, and return the short status contract. The

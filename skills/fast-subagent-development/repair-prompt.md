@@ -1,12 +1,14 @@
 # Fast Subagent Repair Prompt Template
 
-Use this template when dispatching a repair subagent after the final
-review finds Critical/Important issues. Both rounds dispatch a **fresh
-repair subagent** — fast never resumes the original implementer. Each
-round reuses the implementer's report file as persistent memory: round 1
-reads the implementer's report; round 2 reads the same file (now carrying
-the round-1 fix report) and runs on a higher-tier model. See SKILL.md
-Repair Loop for the 2-round cap and adjudication.
+Use this template when dispatching a **fresh** repair subagent after the
+final review finds Critical/Important issues. Round 1 prefers resuming the
+original implementer (its context is intact) — use this template only when
+the harness cannot resume, or for round 2. Round 2 always dispatches fresh
+on a higher-tier model. Each round reuses the implementer's report file as
+persistent memory: round 1 reads the implementer's report; round 2 reads
+the same file (now carrying the round-1 fix report) and runs on a
+higher-tier model. See SKILL.md Repair Loop for the 2-round cap and
+adjudication.
 
 ```
 Subagent (general-purpose):

@@ -16,6 +16,20 @@ ledger and the tool results carry the record.
 
 **Continuous execution:** Do not pause to check in with your human partner between packets. Execute all packets from the plan without stopping. The only reasons to stop are: BLOCKED status you cannot resolve, ambiguity that genuinely prevents progress, or all packets complete. "Should I continue?" prompts and progress summaries waste their time — they asked you to execute the plan, so execute it.
 
+**Rulings, not stalls.** A running plan does not wait on a human. Conflicts,
+ambiguities, plan defects, a cap you would have asked to exceed — decide
+them. The plan is the binding authority and your judgment settles what it
+does not answer. Record every decision in the ledger as
+`Ruling: <what you decided> — <why> — <what it costs if wrong>`, and keep
+going. A wrong ruling costs rework your human partner can see and undo; a
+session parked on a question costs their whole day and buys nothing.
+
+Four things stop you, and only these: an irreversible or destructive
+operation; a security-sensitive action; a side effect outside this worktree
+that norms say you ask about first (a merge, a push to a shared branch, a
+publish); and a plan so broken that every path forward is a guess. For those,
+stop and ask.
+
 ## When to Use
 
 Use this skill when:
@@ -91,9 +105,18 @@ Use the least powerful model that can handle each role to conserve cost and incr
 **Final review**: choose the model with the same judgment as a
 `subagent-driven-development` task reviewer, scaled to the branch diff's
 size, complexity, and risk. A small mechanical branch does not need the
-most capable model; a subtle concurrency change does. The final whole-branch
-review is the one place fast uses a capable model by default — dispatch it
-on the most capable available model unless the diff is small and mechanical.
+most capable model; a subtle concurrency change does.
+
+**Auto-downgrade rule:** before dispatching the final review, check the
+branch diff size (`git diff --stat <BASE>..<HEAD>`). If the total is under
+~300 changed lines AND every implementer packet ran on a cheap or standard
+model (no architecture packets), dispatch the final review on a mid-tier
+model — the most capable model is overkill for a mechanical branch. If any
+packet required architecture-level judgment, or the diff exceeds ~300 lines,
+or the branch touches security, concurrency, or migration paths, use the
+most capable available model. When in doubt, take the heavier tier — but
+defaulting the most expensive model on every run is the single biggest
+resource drain in a fast run.
 
 **Repair packets**: round 1 uses the same tier as the implementer that
 produced the code (or one tier up if that implementer was cheap). Round 2
@@ -106,7 +129,11 @@ findings list, not reason about new design.
 **Always specify the model explicitly when dispatching a subagent.** An
 omitted model inherits your session's model — often the most capable and
 most expensive — which silently defeats this section and is the single
-biggest source of slow runs.
+biggest source of slow runs. On harnesses that accept a reasoning-effort
+parameter (e.g. Codex), set **both** `model` and `reasoning_effort`
+explicitly on every spawn — setting `model` alone silently resets effort
+to that model's default, not yours, which can either over-spend on a
+trivial task or under-power a judgment task.
 
 **Turn count beats token price.** Wall-clock and context cost scale with how
 many turns a subagent takes, and the cheapest models routinely take 2-3× the
@@ -172,13 +199,26 @@ for three classes:
    implemented — better to surface the plan contradiction now than after
    the implementer did exactly what was asked.
 
-Present everything you find to your human partner as **one batched
-question** — each finding beside the plan or packet text that mandates it,
-asking which governs — before execution begins, not one interrupt per
-discovery mid-run. If the scan is clean, proceed without comment. Do not
-dispatch a subagent for this scan — you hold the whole packet list and the
-plan's Global Constraints; reading them once is the whole job. The final
-review remains the net for conflicts that only emerge from implementation.
+**Rule on everything you find, then keep going.** A running plan does not
+wait on a human. For each finding, weigh it against the plan text that
+mandates it, decide, and record the ruling in the ledger as
+`Ruling: <what you decided> — <why> — <what it costs if wrong>` before
+dispatching Packet 1. A wrong ruling costs rework your human partner can see
+and undo; a session parked on a question costs their whole day and buys
+nothing.
+
+Four things stop you, and only these: an irreversible or destructive
+operation; a security-sensitive action; a side effect outside this worktree
+that norms say you ask about first (a merge, a push to a shared branch, a
+publish); and a plan so broken that every path forward is a guess. For
+those, stop and ask. Everything else — including pre-flight conflicts,
+ambiguous packet boundaries, and constraint tensions — gets a ruling and
+continues.
+
+If the scan is clean, proceed without comment. Do not dispatch a subagent
+for this scan — you hold the whole packet list and the plan's Global
+Constraints; reading them once is the whole job. The final review remains
+the net for conflicts that only emerge from implementation.
 
 ## Execution Mode
 
@@ -189,6 +229,14 @@ Auto mode uses conservative parallelism:
 - Run packets serially when independence is uncertain
 - Run packets serially when they may edit the same file, shared configuration, shared tests, lockfiles, dependency manifests, generated artifacts, migrations, or shared helpers
 - Run security-sensitive, authentication-sensitive, persistence-sensitive, migration-sensitive, and release-sensitive packets serially
+
+**Disjoint-file heuristic:** the strongest independence signal is
+verifiable from the plan itself. If two packets' file sets are completely
+disjoint — no shared source, no shared test, no shared config, no shared
+manifest — they are safe to parallelize regardless of other factors. Check
+this before falling back to "uncertain → serial." Most well-packetized
+plans produce several disjoint pairs that conservative serial logic
+needlessly queues.
 
 User instructions override the default:
 - If the user explicitly asks for serial execution, run all packets serially
@@ -201,6 +249,17 @@ Parallel mode must not mean forced parallelism.
 Everything you paste into a dispatch prompt — and everything a subagent
 prints back — stays resident in your context for the rest of the session
 and is re-read on every later turn. Hand artifacts over as files.
+
+**Waiting on dispatched subagents:** never poll a wait interface with
+short timeouts, and never sit in one silent, open-ended wait either.
+While you have local work — ledger updates, packaging the next packet
+brief, reading reports — keep working; child results arrive on their
+own. When you are genuinely idle, wait in bounded stretches (five to
+ten minutes, where your platform allows), and between stretches post
+one line of status and reconcile your live children: list them, and
+chase any that finished without reporting. A bounded stretch keeps
+nearly all of a long wait's efficiency while guaranteeing a stuck or
+lost child is noticed within minutes, not at the end of the session.
 
 Each implementer subagent receives exactly one implementation packet.
 
@@ -231,6 +290,12 @@ The implementer must:
 4. Commit the packet as one commit
 5. Report status, changed files, commit SHA, commands run, and concerns
 
+The dispatch carries the no-subagents contract (it is in the implementer
+template): the implementer never dispatches subagents — not helpers, and
+never a reviewer. In real sessions, every reviewer a worker spawned
+duplicated the final review the controller dispatches anyway — a full extra
+review seat per packet.
+
 Implementers must not create one commit per checkbox microstep. Commit messages describe the packet outcome.
 
 Implementer statuses:
@@ -247,6 +312,14 @@ ledger in the same message as your other bookkeeping:
 - `Packet <N>: complete (commits <base7>..<head7>, concerns: <one-liner>)` when concerns were reported
 
 Then mark the todo complete and move on.
+
+**Context slimming after completion:** once the ledger line is written and
+the todo is marked complete, that packet's dispatch prompt and status
+report are dead weight — do not re-read them on later turns. The only
+artifacts you need going forward are the ledger line (for recovery) and
+the report-file path (for the final review and repair). A 10-packet run
+accumulates 20+ message pairs in your context; treating completed packets
+as read-only history keeps your context lean for coordination work.
 
 ## Final Review
 
@@ -306,16 +379,18 @@ re-review at that list so it can triage. A roll-up nobody reads is a silent
 discard.
 
 The loop is capped at **2 rounds**. Each round is one repair dispatch plus
-one scoped re-review. Fast always dispatches a **fresh repair subagent**
-(via `./repair-prompt.md`) — it never resumes the original implementer.
-The implementer's report file is the persistent memory the repair subagent
-starts from; no live subagent context is assumed.
+one scoped re-review. The implementer's report file is the persistent
+memory either path starts from.
 
-**Round 1 — dispatch one fresh repair subagent** with the review findings, the
-design spec path (if the plan references one), the companion acceptance
-file path (if present), the related diff file path, and failing evidence.
-Use `./repair-prompt.md`. The repair subagent fixes root causes, runs
-targeted tests, commits the repair, and appends its fix report to
+**Round 1 — resume the original implementer** with the review findings.
+Its context is intact: it knows the packet, the code, and its own choices,
+so it does not have to rebuild understanding from the report file. Send
+the findings verbatim, the diff file path, and the failing evidence. If
+your harness cannot send another message to a live subagent, dispatch a
+fresh repair subagent (via `./repair-prompt.md`) carrying the brief path,
+the report-file path, and the findings — the report file is the persistent
+memory either way. The implementer fixes root causes, runs targeted tests,
+commits the repair, and appends its fix report to
 `<workspace>/packet-N-report.md` (repair shares the implementer's report
 file). Specify the model explicitly (see Model Selection).
 
@@ -334,12 +409,14 @@ Critical/Important breakage), append
 `Packet <N>: repair round 1/2 (all addressed; commits <fixbase7>..<head7>)`
 to the ledger and finish.
 
-**Round 2 — only if round 1 left findings open.** Dispatch a fresh repair
-subagent on a model at least one tier above round 1, with the brief path,
-the report-file path (which now contains the round-1 fix report), and the
-open findings. Frame it: "A prior repair attempted this; you own it now.
-Read the report file for what was tried." Then run one scoped re-review as
-above.
+**Round 2 — only if round 1 left findings open.** Dispatch a **fresh**
+repair subagent (via `./repair-prompt.md`) on a model at least one tier
+above round 1, with the brief path, the report-file path (which now
+contains the round-1 fix report), and the open findings. Frame it: "A
+prior repair attempted this; you own it now. Read the report file for what
+was tried." A loop that survives round 1 usually means the implementer
+cannot see its own problem — fresh eyes and a capability bump in one move.
+Then run one scoped re-review as above.
 
 **After round 2,** append
 `Packet <N>: repair round 2/2 (<X> addressed, <Y> open — <finding one-liners>; commits <a7>..<b7>)`
@@ -406,6 +483,7 @@ failure this skill has — the ledger exists to prevent it.
 | "Skip final review, implementers reported DONE" | Implementer self-review never replaces the final review. |
 | "Final review can run its own git diff" | That wastes reviewer turns and puts the diff in its context. Hand it the review-package file. |
 | "Pre-flight is overhead, the plan looked fine" | One turn of scanning vs. a whole run wasted on a plan conflict. A conflict caught at final review cost the entire implementation. |
+| "I should ask my human partner about this plan conflict" | Rule on it and keep going — the plan is the authority, your judgment settles what it doesn't answer, and the ledger records the ruling. A parked question costs their whole day; a wrong ruling costs rework they can see and undo. |
 
 ## Red Flags
 

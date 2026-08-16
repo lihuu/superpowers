@@ -8,9 +8,11 @@ review, so this review carries the whole branch.
 Subagent (general-purpose):
   description: "Final review fast-subagent branch"
   model: [MODEL — REQUIRED: the most capable available model for a branch
-         with integration or subtle changes; a cheap-to-mid tier is
-         acceptable only for a small, mechanical branch. See SKILL.md
-         Model Selection. An omitted model silently inherits the
+         with integration or subtle changes, or any branch touching
+         security, concurrency, or migrations. A mid-tier model is
+         acceptable for a small, mechanical branch (under ~300 changed
+         lines, no architecture packets). See SKILL.md Model Selection
+         auto-downgrade rule. An omitted model silently inherits the
          session's most expensive one.]
   prompt: |
     You are the final reviewer for a fast-subagent-development run. A broad
