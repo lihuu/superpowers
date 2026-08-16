@@ -14,7 +14,7 @@ Use `subagent-driven-development` instead for strict mode, high confidence, PR-r
 **Narration:** between tool calls, narrate at most one short line — the
 ledger and the tool results carry the record.
 
-**Continuous execution:** Do not pause to check in with your human partner between packets. Execute all packets from the plan without stopping. The only reasons to stop are: BLOCKED status you cannot resolve, ambiguity that genuinely prevents progress, or all packets complete. "Should I continue?" prompts and progress summaries waste their time — they asked you to execute the plan, so execute it.
+**Continuous execution:** Do not pause to check in with your human partner between packets. Execute all packets from the plan without stopping. The only reasons to stop are the four named below, or all packets complete. "Should I continue?" prompts and progress summaries waste their time — they asked you to execute the plan, so execute it.
 
 **Rulings, not stalls.** A running plan does not wait on a human. Conflicts,
 ambiguities, plan defects, a cap you would have asked to exceed — decide
@@ -154,18 +154,20 @@ Convert plan tasks into implementation packets before dispatching subagents.
 
 A packet may contain one or more adjacent plan tasks. Checkbox steps are TDD execution checkpoints, not subagent boundaries.
 
-The controller automatically merges adjacent tasks when they are part of the same implementation chain:
+**Default to merging.** A plan's tasks are usually one related feature — merge adjacent tasks into as few packets as the hard boundaries below allow. A single packet that holds the whole feature is fine; do not split just because tasks look independently implementable. Splitting a related feature into one-subagent-per-task is how fast silently degrades into SDD's shape and loses the speed this skill exists for.
+
+Merge adjacent tasks when they are part of the same implementation chain:
 - Setup plus implementation
 - Helper plus wiring
 - Tests plus the behavior they verify
 - Documentation for the same behavior
 - Tightly dependent tasks that modify the same files or test surface
 
-Do not merge tasks when they are independently implementable or risky to combine:
-- Different subsystems
-- Different risk domains such as authentication, security, persistence, migrations, or release automation
-- Tasks that can be independently verified and reverted
-- Tasks whose combined context would be too large for a focused implementer
+Split only at these hard boundaries:
+- Different risk domains (authentication, security, persistence, migrations, release automation) — keep these in separate packets
+- A packet whose combined context would be too large for a focused implementer
+
+When in doubt, merge. A packet that is slightly larger than ideal still runs; a plan split into one-subagent-per-task has already lost the speed this skill exists for.
 
 Packetization is automatic. Do not ask for confirmation for every grouping decision. Summarize the packet list before execution so progress is understandable.
 
@@ -207,13 +209,9 @@ dispatching Packet 1. A wrong ruling costs rework your human partner can see
 and undo; a session parked on a question costs their whole day and buys
 nothing.
 
-Four things stop you, and only these: an irreversible or destructive
-operation; a security-sensitive action; a side effect outside this worktree
-that norms say you ask about first (a merge, a push to a shared branch, a
-publish); and a plan so broken that every path forward is a guess. For
-those, stop and ask. Everything else — including pre-flight conflicts,
-ambiguous packet boundaries, and constraint tensions — gets a ruling and
-continues.
+Pre-flight conflicts, ambiguous packet boundaries, and constraint tensions
+all get a ruling and continue — the four stop conditions defined at the top
+of this skill are the only exceptions.
 
 If the scan is clean, proceed without comment. Do not dispatch a subagent
 for this scan — you hold the whole packet list and the plan's Global
@@ -233,10 +231,13 @@ Auto mode uses conservative parallelism:
 **Disjoint-file heuristic:** the strongest independence signal is
 verifiable from the plan itself. If two packets' file sets are completely
 disjoint — no shared source, no shared test, no shared config, no shared
-manifest — they are safe to parallelize regardless of other factors. Check
+manifest — they are safe to parallelize regardless of other independence
+factors. Check
 this before falling back to "uncertain → serial." Most well-packetized
 plans produce several disjoint pairs that conservative serial logic
-needlessly queues.
+needlessly queues. The serial rule above still applies: a file-disjoint
+packet that is security-, authentication-, persistence-, migration-, or
+release-sensitive stays serial.
 
 User instructions override the default:
 - If the user explicitly asks for serial execution, run all packets serially
@@ -281,6 +282,8 @@ Before dispatching a packet:
   plan file.
 - Record the packet's BASE (`git rev-parse HEAD`) before dispatching — the
   final review diff needs it.
+- Record the implementer's agent identity from the dispatch result — repair
+  round 1 resumes this agent.
 - Specify the model explicitly (see Model Selection).
 
 The implementer must:
