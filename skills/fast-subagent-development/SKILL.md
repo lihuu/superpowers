@@ -46,206 +46,46 @@ Do not use this skill when:
 
 ## Setup
 
-Prefer an isolated workspace: use superpowers:using-git-worktrees to create
-one or verify the existing one. Fast does not force a worktree the way
-`subagent-driven-development` does, but running on a feature branch (never
-main/master without your human partner's explicit consent) is still
-required.
+Prefer an isolated workspace: use `superpowers:using-git-worktrees` or run on a dedicated feature branch.
 
-Conversation memory does not survive compaction. In real sessions,
-controllers that lost their place have re-dispatched entire completed packet
-sequences — the single most expensive failure observed. Track progress in
-a ledger file, not only in todos.
-
-- Each plan owns a workspace: at skill start, run this skill's
-  `scripts/sdd-workspace PLAN_FILE` — it prints the plan's git-ignored
-  directory (`<repo-root>/.superpowers/sdd/<plan-basename>/`), home to
-  every artifact for THIS plan: ledger, packets list, briefs, reports,
-  review packages. Another plan's directory is never yours to read or
-  write. (The directory is shared with `subagent-driven-development` when
-  the same plan runs under both skills; fast artifacts use the `packet-N-*`
-  prefix, SDD uses `task-N-*`, so they never collide.)
-- Check for this plan's ledger at `<workspace>/progress.md`. If its first
-  line names your plan file, packets with a `Packet <N>: complete` line are
-  DONE — do not re-dispatch them; resume at the first packet without one.
-  A packet whose last line is a repair round is mid-loop: resume the loop at
-  the next round. A ledger whose first line names a different plan file is
-  another plan's progress: leave it in place and start your own, fresh.
-- Create the ledger with its identity as the first line:
-  `# SDD-fast ledger — plan: <plan file path>`.
-- The ledger is your recovery map: the commits it names exist in git even
-  when your context no longer remembers creating them. After compaction,
-  trust the ledger and `git log` over your own recollection.
-- `git clean -fdx` will destroy the workspace (it's git-ignored scratch); if
-  that happens, recover from `git log`.
-
-Read the plan once, note its context and Global Constraints, and create a
-todo per packet (after Packetization below).
-
-After the Pre-Flight Packet Review comes back clean, record the branch base
-before dispatching Packet 1:
-
+Record the branch base before dispatching Packet 1:
 ```bash
 BASE_SHA=$(git rev-parse HEAD)
 ```
 
-Do not provide the companion acceptance file to initial implementer
-subagents.
-
 ## Model Selection
 
-Use the least powerful model that can handle each role to conserve cost and increase speed.
+Use fast, lightweight models where possible to conserve cost and maximize speed.
 
-**Mechanical implementation packets** (isolated functions, clear specs, 1-2 files): use a fast, cheap model. Most implementation packets are mechanical when the plan is well-specified.
+- **Mechanical / straightforward packets** (isolated functions, clear specs, 1-2 files): use a fast/cheap model.
+- **Integration / multi-file packets**: use a standard model.
+- **Final review**: use a standard or capable model.
 
-**Integration and judgment packets** (multi-file coordination, pattern matching, debugging): use a standard model.
+Always specify the `model` explicitly when dispatching a subagent.
 
-**Architecture and design packets**: use the most capable available model.
-
-**Final review**: choose the model with the same judgment as a
-`subagent-driven-development` task reviewer, scaled to the branch diff's
-size, complexity, and risk. A small mechanical branch does not need the
-most capable model; a subtle concurrency change does.
-
-**Auto-downgrade rule:** before dispatching the final review, check the
-branch diff size (`git diff --stat <BASE>..<HEAD>`). If the total is under
-~300 changed lines AND every implementer packet ran on a cheap or standard
-model (no architecture packets), dispatch the final review on a mid-tier
-model — the most capable model is overkill for a mechanical branch. If any
-packet required architecture-level judgment, or the diff exceeds ~300 lines,
-or the branch touches security, concurrency, or migration paths, use the
-most capable available model. When in doubt, take the heavier tier — but
-defaulting the most expensive model on every run is the single biggest
-resource drain in a fast run.
-
-**Repair packets**: round 1 uses the same tier as the implementer that
-produced the code (or one tier up if that implementer was cheap). Round 2
-uses a model at least one tier above round 1 — a loop that survives one
-round usually means the implementer cannot see its own problem.
-
-**Scoped re-reviews**: take a cheap-to-mid tier. They verify fixes against a
-findings list, not reason about new design.
-
-**Always specify the model explicitly when dispatching a subagent.** An
-omitted model inherits your session's model — often the most capable and
-most expensive — which silently defeats this section and is the single
-biggest source of slow runs. On harnesses that accept a reasoning-effort
-parameter (e.g. Codex), set **both** `model` and `reasoning_effort`
-explicitly on every spawn — setting `model` alone silently resets effort
-to that model's default, not yours, which can either over-spend on a
-trivial task or under-power a judgment task.
-
-**Turn count beats token price.** Wall-clock and context cost scale with how
-many turns a subagent takes, and the cheapest models routinely take 2-3× the
-turns on multi-step work — costing more overall. Use a mid-tier model as the
-floor for reviewers and for implementers working from prose descriptions.
-When the packet's plan text contains the complete code to write, the
-implementation is transcription plus testing: use the cheapest tier for
-that implementer. Single-file mechanical fixes also take the cheapest tier.
-
-**Packet complexity signals (implementation packets):**
-- Touches 1-2 files with a complete spec → cheap model
-- Touches multiple files with integration concerns → standard model
-- Requires design judgment or broad codebase understanding → most capable model
-
-## Packetization
+## Packetization (Aggressive Merging)
 
 Convert plan tasks into implementation packets before dispatching subagents.
 
-A packet may contain one or more adjacent plan tasks. Checkbox steps are TDD execution checkpoints, not subagent boundaries.
+**Default to aggressive merging.**
+- For most small-to-medium plans, **merge all tasks into 1 or at most 2 packets**.
+- A single implementer executing 3-4 cohesive tasks in one flow is dramatically faster than 3-4 separate subagents cold-starting and exploring the repo from scratch.
+- Only split packets when:
+  1. The tasks belong to completely different modules/directories (and can run in parallel).
+  2. The total scope exceeds ~400 lines of changes.
 
-**Default to merging.** A plan's tasks are usually one related feature — merge adjacent tasks into as few packets as the hard boundaries below allow. A single packet that holds the whole feature is fine; do not split just because tasks look independently implementable. Splitting a related feature into one-subagent-per-task is how fast silently degrades into SDD's shape and loses the speed this skill exists for.
+## Execution Mode & Parallelism
 
-Merge adjacent tasks when they are part of the same implementation chain:
-- Setup plus implementation
-- Helper plus wiring
-- Tests plus the behavior they verify
-- Documentation for the same behavior
-- Tightly dependent tasks that modify the same files or test surface
-
-Split only at these hard boundaries:
-- Different risk domains (authentication, security, persistence, migrations, release automation) — keep these in separate packets
-- A packet whose combined context would be too large for a focused implementer
-
-When in doubt, merge. A packet that is slightly larger than ideal still runs; a plan split into one-subagent-per-task has already lost the speed this skill exists for.
-
-Packetization is automatic. Do not ask for confirmation for every grouping decision. Summarize the packet list before execution so progress is understandable.
-
-After packetization, write every packet's full text to
-`<workspace>/packets.md`, one section per packet, each starting with
-`## Packet N: <name>`. This file is the single source of packet text —
-`scripts/packet-brief PLAN_FILE N` slices section N out of it into a brief
-file, so packet text never has to be pasted through your context.
-
-## Pre-Flight Packet Review
-
-Before dispatching Packet 1, spend one turn scanning the packetized plan
-for conflicts. This is cheap insurance: a conflict caught now costs one
-turn; the same conflict caught at final review costs the whole run. Scan
-for three classes:
-
-1. **Packets that contradict each other or the plan's Global Constraints.**
-   Two packets that assert opposite behavior, or a packet that violates a
-   stated constraint (a global "no new dependencies" rule vs a packet that
-   adds one).
-2. **Packets whose file or test surfaces overlap in a way the packetizer
-   missed.** Two packets both editing the same function, the same config
-   block, the same test file's setup, or the same migration number. The
-   packetization rules try to keep such tasks in one packet, but a missed
-   merge means two implementers race on the same lines — exactly what the
-   Execution Mode serial rule exists to prevent, caught one step earlier.
-3. **Anything the plan explicitly mandates that the review rubric treats as
-   a defect.** A test the plan says to write that asserts nothing, a
-   verbatim duplication of a logic block the plan calls for, a "just copy
-   this" step. These will fail final review no matter how faithfully
-   implemented — better to surface the plan contradiction now than after
-   the implementer did exactly what was asked.
-
-**Rule on everything you find, then keep going.** A running plan does not
-wait on a human. For each finding, weigh it against the plan text that
-mandates it, decide, and record the ruling in the ledger as
-`Ruling: <what you decided> — <why> — <what it costs if wrong>` before
-dispatching Packet 1. A wrong ruling costs rework your human partner can see
-and undo; a session parked on a question costs their whole day and buys
-nothing.
-
-Pre-flight conflicts, ambiguous packet boundaries, and constraint tensions
-all get a ruling and continue — the four stop conditions defined at the top
-of this skill are the only exceptions.
-
-If the scan is clean, proceed without comment. Do not dispatch a subagent
-for this scan — you hold the whole packet list and the plan's Global
-Constraints; reading them once is the whole job. The final review remains
-the net for conflicts that only emerge from implementation.
-
-## Execution Mode
-
-Auto is the default execution mode. Do not ask the user to choose an execution mode unless their instruction is ambiguous in a way that affects safety.
-
-Auto mode uses conservative parallelism:
-- Run packets in parallel only when they are clearly independent
-- Run packets serially when independence is uncertain
-- Run packets serially when they may edit the same file, shared configuration, shared tests, lockfiles, dependency manifests, generated artifacts, migrations, or shared helpers
-- Run security-sensitive, authentication-sensitive, persistence-sensitive, migration-sensitive, and release-sensitive packets serially
-
-**Disjoint-file heuristic:** the strongest independence signal is
-verifiable from the plan itself. If two packets' file sets are completely
-disjoint — no shared source, no shared test, no shared config, no shared
-manifest — they are safe to parallelize regardless of other independence
-factors. Check
-this before falling back to "uncertain → serial." Most well-packetized
-plans produce several disjoint pairs that conservative serial logic
-needlessly queues. The serial rule above still applies: a file-disjoint
-packet that is security-, authentication-, persistence-, migration-, or
-release-sensitive stays serial.
-
-User instructions override the default:
-- If the user explicitly asks for serial execution, run all packets serially
-- If the user explicitly asks for parallel execution, parallelize only packets that remain clearly non-conflicting; conflict risk still downgrades those packets to serial execution
-
-Parallel mode must not mean forced parallelism.
+- **Active Parallelism:** If packets modify disjoint directories/files, dispatch them **in parallel immediately**.
+- **Serial Execution:** Only serialize when packets directly modify the exact same source files or migration sequences.
 
 ## Implementer Subagents
+
+Keep dispatches lean and action-oriented. Use `./implementer-prompt.md`.
+
+- **Inline Requirements:** If the packet scope is concise (<50 lines), provide requirements directly in the prompt instead of generating intermediate brief files.
+- **Direct Return:** Implementers test, commit once, and return status directly (Status, Commit SHA, Test Summary). No need to write intermediate report files to disk.
+- Never let implementers spawn subagents or reviewers.
 
 Everything you paste into a dispatch prompt — and everything a subagent
 prints back — stays resident in your context for the rest of the session
@@ -326,133 +166,24 @@ as read-only history keeps your context lean for coordination work.
 
 ## Final Review
 
-After all implementation packets are complete, dispatch one final reviewer subagent by default.
+After implementation packets complete, dispatch one consolidated final reviewer subagent:
+- Use `./final-reviewer-prompt.md`.
+- Check diff: `git diff BASE_SHA..HEAD`.
+- Ensure tests pass and all plan items are implemented.
+- If the branch is clean and tests pass, proceed to finish immediately.
 
-Use `./final-reviewer-prompt.md`.
+## Repair Loop (If Needed)
 
-If the plan references a design spec, load the design spec for the final reviewer. If a companion acceptance file exists, load it for the final reviewer as well.
-
-Before dispatching the reviewer, run
-`scripts/review-package PLAN_FILE BASE_SHA HEAD_SHA` (BASE_SHA is the
-branch base you recorded before Packet 1). It writes the commit list, stat
-summary, and full diff with context to a uniquely named file and prints the
-path. Hand the reviewer that path — the diff never enters your own context,
-and the reviewer reads one file instead of re-deriving the branch diff with
-git commands.
-
-The final reviewer receives:
-1. Design spec (path)
-2. Companion acceptance file path if present
-3. The review-package diff file path
-4. Packet summary with commit SHAs
-5. Relevant test results (from implementer reports)
-6. Implementer concerns
-
-The final reviewer checks:
-- Spec alignment
-- Code quality
-- Integration between packets
-- Test quality and coverage
-- Missing or extra behavior
-- Implementation concerns raised by implementers
-
-If a companion acceptance file exists, the reviewer performs a lightweight Acceptance check:
-- Report PASS, FAIL, or NOT VERIFIED for each Acceptance Criterion and Rollout Acceptance check
-- Include concrete evidence for each status
-- Do not require the full high-assurance acceptance repair loop unless the user asked for strict, PR-ready, high confidence, or full acceptance mode
-
-If the user explicitly says the main agent should review without a reviewer subagent, the controller may perform the final review itself.
-
-Point the reviewer at the ledger's deferred-minor lines (if any) so it can
-triage which must be fixed before merge.
-
-## Independent Acceptance (Optional)
-
-If the user asked for strict, PR-ready, high confidence, or full acceptance mode, invoke `superpowers:acceptance-review` after the final review completes. It performs the full high-assurance acceptance repair loop: separate extraction, independent reviewer, minimal repair packets, and a fresh full re-verification.
-
-Do not invoke `acceptance-review` for the default fast path — the final reviewer's lightweight Acceptance check is sufficient.
-
-## Repair Loop
-
-If final review finds no Critical/Important issues, finish (see Finish). If it does, enter the repair loop.
-
-**Minor findings never enter the loop.** Record them in the ledger as you
-go (`Packet <N>: minor (deferred): <one-liner>`) and point the final
-re-review at that list so it can triage. A roll-up nobody reads is a silent
-discard.
-
-The loop is capped at **2 rounds**. Each round is one repair dispatch plus
-one scoped re-review. The implementer's report file is the persistent
-memory either path starts from.
-
-**Round 1 — resume the original implementer** with the review findings.
-Its context is intact: it knows the packet, the code, and its own choices,
-so it does not have to rebuild understanding from the report file. Send
-the findings verbatim, the diff file path, and the failing evidence. If
-your harness cannot send another message to a live subagent, dispatch a
-fresh repair subagent (via `./repair-prompt.md`) carrying the brief path,
-the report-file path, and the findings — the report file is the persistent
-memory either way. The implementer fixes root causes, runs targeted tests,
-commits the repair, and appends its fix report to
-`<workspace>/packet-N-report.md` (repair shares the implementer's report
-file). Specify the model explicitly (see Model Selection).
-
-If review findings span independent areas, you may dispatch multiple
-focused repair subagents. Do not run focused repair subagents in parallel
-when they may touch the same files, tests, configuration, or shared helpers.
-
-Then run `scripts/review-package PLAN_FILE FIX_BASE HEAD` (FIX_BASE is the
-head the final review saw) and dispatch the scoped re-review with
-`./re-review-prompt.md`, the findings list, the brief, the report file, and
-the printed diff path. The re-reviewer verdicts each finding ADDRESSED or
-NOT ADDRESSED and flags new breakage in the fix diff only.
-
-If the re-review comes back clean (all findings addressed, no new
-Critical/Important breakage), append
-`Packet <N>: repair round 1/2 (all addressed; commits <fixbase7>..<head7>)`
-to the ledger and finish.
-
-**Round 2 — only if round 1 left findings open.** Dispatch a **fresh**
-repair subagent (via `./repair-prompt.md`) on a model at least one tier
-above round 1, with the brief path, the report-file path (which now
-contains the round-1 fix report), and the open findings. Frame it: "A
-prior repair attempted this; you own it now. Read the report file for what
-was tried." A loop that survives round 1 usually means the implementer
-cannot see its own problem — fresh eyes and a capability bump in one move.
-Then run one scoped re-review as above.
-
-**After round 2,** append
-`Packet <N>: repair round 2/2 (<X> addressed, <Y> open — <finding one-liners>; commits <a7>..<b7>)`
-to the ledger.
-
-**The cap.** When round 2's re-review still leaves findings open, stop
-dispatching. Adjudicate each open finding yourself — you hold the plan and
-the cross-packet context the reviewer lacks:
-
-- **The reviewer is wrong, or the point is contestable:** park it —
-  `Packet <N>: parked — <finding> — ruling: <why the code stands>`.
-- **Real, but nothing downstream builds on it:** park it the same way, with
-  a ruling that says it's real and deferred.
-- **Real and load-bearing** — a later packet builds on it, or it reveals a
-  plan defect: STOP. Append `Packet <N>: BLOCKED — <reason>` and report to
-  your human partner with the finding, the plan text it collides with, and
-  the fix history. Parking a structural failure hands every dependent
-  packet a problem it cannot fix either.
-
-Adjudicate only at the cap. Adjudicating earlier to end a loop is
-pre-judging with a different name. Every adjudication is a ledger entry —
-a silent discard is forbidden.
-
-Never fix findings yourself in the controller session — your context stays
-clean for coordination, and controller fixes skip review.
+If the final review finds Critical/Important defects:
+1. Dispatch one repair subagent (`./repair-prompt.md`) with the exact defect list.
+2. Verify with test suite.
+3. Keep repairs capped at 1-2 rounds.
 
 ## Finish
 
-When the final review is clean and its fixes (if any) are merged, delete
-this plan's workspace (`rm -rf <workspace>`) — the git history is the
-record now. Sibling directories belong to other plans; leave them alone.
-
-Use superpowers:finishing-a-development-branch.
+When review/tests pass:
+1. Run final verification.
+2. Use `superpowers:finishing-a-development-branch`.
 
 ## Error Handling
 
