@@ -1,53 +1,47 @@
 # Fast Subagent Implementer Prompt Template
 
-Use this template when dispatching an implementer subagent for one implementation packet.
+Use this template to dispatch the dedicated implementer subagent for the implementation plan.
 
 ```
 Subagent (general-purpose):
-  description: "Implement Packet N: [packet name]"
-  model: [MODEL — REQUIRED: choose per SKILL.md Model Selection; an omitted
-         model silently inherits the session's default]
+  description: "Implement plan: [plan name or summary]"
+  model: [MODEL — REQUIRED: specify standard or capable model]
   prompt: |
-    You are implementing Packet N: [packet name]
+    You are the dedicated implementer for an implementation plan.
 
-    ## Requirements & Scope
+    ## Plan / Tasks To Implement
 
-    [PACKET_REQUIREMENTS_OR_BRIEF_PATH]
-    (Implement only this packet's scope. Checkbox steps are TDD execution checkpoints, not separate dispatch boundaries; complete every one before returning.)
-
-    ## Context
-
-    [Scene-setting: where this packet fits, target files, interfaces, expected test commands. Keep it to 1-2 sentences.]
+    [PLAN_PATH_OR_FULL_PLAN_TEXT]
 
     ## Instructions
 
     Work from: [directory]
 
-    Execute directly without preliminary chat or waiting:
-    1. Inspect the relevant code files and existing tests.
-    2. Implement the required changes following existing codebase conventions and TDD flow.
-    3. Run focused tests to verify behavior and ensure test suite passes.
-    4. Commit your changes as a single commit: `git commit -m "<concise descriptive message>"`.
-    5. Return your completion report immediately.
+    Execute all tasks in the plan sequentially:
+    1. Read the plan and inspect the relevant codebase files.
+    2. Implement each task in order following codebase conventions and TDD flow.
+    3. Run focused and relevant tests to verify behavior and ensure all tests pass.
+    4. Commit your changes with descriptive commit message(s) (e.g. `git commit -m "feat: implement <feature>"`).
+    5. Return your completion summary immediately.
 
     ## Rules
     - Do all work yourself; never spawn subagents or reviewers.
-    - Keep changes focused strictly on the packet scope (no unsolicited refactoring or YAGNI).
-    - If genuinely blocked by missing info or structural contradiction, return BLOCKED or NEEDS_CONTEXT with a specific 1-sentence blocker description.
+    - Stay focused on the plan scope (no unsolicited refactoring or YAGNI).
+    - If blocked by missing info or structural contradictions, return BLOCKED or NEEDS_CONTEXT with a specific 1-sentence blocker description.
 
     ## Output Contract
 
-    Return a concise response (under 10 lines):
-    - **Status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
-    - **Commit:** <short-sha> <commit-message>
-    - **Tests:** <e.g. "12/12 passing, output clean">
-    - **Files Modified:** <list of changed files>
+    Return a concise report (under 10 lines):
+    - **Status:** DONE | DONE_WITH_CONCERNS | BLOCKED
+    - **Commits:** <list of commit SHAs or range>
+    - **Tests:** <e.g. "All 24/24 tests passing, output pristine">
+    - **Summary:** <1-2 sentences on what was completed>
     - **Concerns:** <any risks or doubts, or "None">
 ```
 
 **Placeholders:**
-- `[MODEL]` — REQUIRED: fast/cheap model for mechanical tasks; standard for integration.
-- `[PACKET_REQUIREMENTS_OR_BRIEF_PATH]` — the packet requirements (inline text or brief file path).
-- `[directory]` — working directory.
+- `[MODEL]` — Standard or capable model.
+- `[PLAN_PATH_OR_FULL_PLAN_TEXT]` — Path to the plan file or full plan text.
+- `[directory]` — Working directory.
 
-**Implementer returns:** concise status, commit, test result, changed files, and any concerns directly.
+**Implementer returns:** concise status, commits, test results, and summary.

@@ -48,4 +48,4 @@ Subagent (general-purpose):
 - `[BASE_SHA]` / `[HEAD_SHA]` — Git SHA range.
 - `[DIFF_FILE_OR_INSPECT_COMMAND]` — Diff file path or `git diff BASE..HEAD`.
 
-**Reviewer returns:** Test status, spec compliance verdict, list of critical issues, and finish readiness.acceptance status, ready-to-finish assessment.
+**Reviewer returns:** Test status, spec compliance verdict, list of critical issues, and finish readiness.
