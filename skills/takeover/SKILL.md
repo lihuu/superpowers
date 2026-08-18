@@ -75,23 +75,19 @@ When using Transcript Fallback:
 Run current-state verification before resuming:
 
 ```bash
-bash skills/handoff/scripts/gather-state.sh .
-```
-
-If that script is unavailable, fall back to:
-
-```bash
 git status --short
 git rev-parse --abbrev-ref HEAD
 git rev-parse --short HEAD
+git log -n 3 --oneline
 ```
+(Or run `bash skills/handoff/scripts/gather-state.sh .` if available.)
 
 Compare the current state to the handoff:
 
 - Current branch matches the handoff branch.
 - Current last commit matches the handoff commit, or the handoff commit is an ancestor of `HEAD`.
 - Handoff modified files still exist as modified, staged, untracked, or committed.
-- Current modified files are mentioned in the handoff.
+- Current modified files are consistent with the handoff.
 
 ## Resume Work
 
@@ -100,21 +96,21 @@ After verification, report exactly one status:
 - `State matches. Resuming from: <next immediate action>.`
 - `State mismatch. I need confirmation before continuing: <specific mismatch>.`
 
-If state matches, reconstruct your task list from `Pending Tasks` and continue from the handoff's `Next Immediate Action`.
+If state matches, reconstruct your task list from `Pending Tasks` and continue from the handoff's `Next Immediate Action` (or the first item under `Pending Tasks` if not explicitly specified).
 
 ## State Mismatch Rules
 
-Block execution and report `State mismatch` when:
+Block execution and report `State mismatch` only when:
 
 - Current branch differs from the handoff branch.
 - Current last commit differs from the handoff commit and the handoff commit is not an ancestor of `HEAD`.
-- A handoff modified file is missing from the working tree and not committed.
-- The working tree contains unexpected modified files not mentioned in the handoff.
-- The handoff has no `Next Immediate Action`.
+- A handoff modified source file is missing from the working tree and not committed.
+- The working tree contains unexpected modified source/business logic files that conflict with the handoff scope (ignore innocuous IDE files, `.DS_Store`, log files, or build caches).
 
-Proceed without asking only when:
+Proceed without asking when:
 
 - The only mismatch is a newer commit that contains the handoff commit.
+- Unmentioned files are non-source temporary files, caches, or logs.
 - The handoff explicitly says a section is `none`.
 - The user explicitly instructs you to continue despite the mismatch.
 

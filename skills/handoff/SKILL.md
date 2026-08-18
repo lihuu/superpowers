@@ -19,7 +19,7 @@ Capture the current objective, reasoning, workspace state, and next action into 
 
 | Item | Path / Command |
 | :--- | :--- |
-| **Gather Script** | `bash skills/handoff/scripts/gather-state.sh .` |
+| **Gather State** | `git status --short; git log -n 3 --oneline` (or `gather-state.sh` if present) |
 | **Handoff Directory** | `docs/superpowers/handoffs/` |
 | **Filename Format** | `YYYY-MM-DD-<feature>-handoff.md` |
 
@@ -29,7 +29,7 @@ Capture the current objective, reasoning, workspace state, and next action into 
    - **Default to Rich Handoff** when the user asks for a normal handoff, transfer, or continuation note.
    - **Use Emergency Handoff only** when the user explicitly says context, tokens, quota, time, or remaining budget is too low for a normal handoff.
    - Do not ask which mode to use unless the user's instruction is contradictory. Asking wastes the same scarce budget the handoff is meant to preserve.
-2. **Gather Automated State:** For Rich Handoff, run `bash skills/handoff/scripts/gather-state.sh .` to get git and file info. For Emergency Handoff, run it only if doing so will not prevent completing the handoff.
+2. **Gather Automated State:** Run git status commands or `bash skills/handoff/scripts/gather-state.sh .` (if script exists) to extract branch, latest commit, and modified files. For Emergency Handoff, extract only if it does not delay completing the handoff.
 3. **Draft the Summary:**
    - **Current Objective:** What were you just trying to do?
    - **Decision State:** What decisions were made, rejected, or still open, and why.
@@ -81,15 +81,15 @@ Capture the current objective, reasoning, workspace state, and next action into 
 - `[path]`: [What changed and whether it is staged, unstaged, or untracked.]
 
 ## Git State
-[Paste the output from `bash skills/handoff/scripts/gather-state.sh .`.]
+[Paste output from `git status --short`, `git log -n 3 --oneline`, branch and commit SHA, or `gather-state.sh` if available.]
 
 ## Mental State & Blockers
 - **Reasoning:** [Why this approach was chosen.]
 - **Blockers:** [Current issues, or `none`.]
 - **Gotchas:** [Risks, assumptions, or `none`.]
 
-## Source Transcript
-- **Source:** [Codex thread/session/path or `unknown`.]
+## Source Transcript / Session
+- **Source:** [Session ID, Conversation ID, Thread/Log path, or `unknown` (e.g. Antigravity, Claude Code, Codex, Qwen, OpenCode)]
 - **Use For:** Evidence only. The receiving agent should read this only if the handoff is incomplete, state verification fails, or more detail is needed.
 ```
 
@@ -122,8 +122,8 @@ Use this only when the user explicitly indicates low remaining quota, low contex
 ## Risks / Gotchas
 - [Important blocker, assumption, or risk, or `none`.]
 
-## Source Transcript
-- **Source:** [Codex thread/session/path or `unknown`.]
+## Source Transcript / Session
+- **Source:** [Session ID, Conversation ID, Thread/Log path, or `unknown` (e.g. Antigravity, Claude Code, Codex, Qwen, OpenCode)]
 - **Use For:** Evidence only if the receiving agent needs more detail.
 ```
 
